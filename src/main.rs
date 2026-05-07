@@ -1,209 +1,658 @@
-use actix_web::{web, App, HttpServer, HttpResponse, Responder};
-use serde::{Deserialize, Serialize};
-use sqlx::{SqlitePool, FromRow};
+use actix_web::{
+    web,
+    App,
+    HttpRequest,
+    HttpResponse,
+    HttpServer,
+    Responder,
+};
+
+use base64::{
+    engine::general_purpose,
+    Engine as _,
+};
+
+use hmac::{Hmac, Mac};
+
+use rusqlite::{
+    params,
+    Connection,
+};
+
+use serde::{
+    Deserialize,
+    Serialize,
+};
+
+use sha2::Sha256;
+
+use std::sync::Mutex;
+
+use tokio::time::{
+    sleep,
+    Duration,
+};
+
 use uuid::Uuid;
-use sha2::{Sha256, Digest};
 
-const MERCHANT_ADDRESS: &str = "GB4TW32HFZEQMTS67U33D6GD36ZHTMEPAVFOIEPWXWY5QYFQDE3PC7QT";
+type HmacSha256 = Hmac<Sha256>;
 
-#[derive(Serialize, Deserialize, FromRow)]
-struct Order {
-    id: String,
+const HMAC_SECRET: &str =
+    "super-secret-key";
+
+const STELLAR_ACCOUNT: &str =
+    "GB4TW32HFZEQMTS67U33D6GD36ZHTMEPAVFOIEPWXWY5QYFQDE3PC7QT";
+
+// 📦 estado app
+struct AppState {
+
+    db: Mutex<Connection>,
+}
+
+// 📦 request
+#[derive(Deserialize)]
+struct CreateOrderRequest {
+
     valor_brl: f64,
-    valor_xlm: Option<f64>,
+}
+
+// 📦 resposta order
+#[derive(Serialize)]
+struct OrderResponse {
+
+    id: String,
+
+    valor_brl: f64,
+
+    valor_xlm: f64,
+
+    memo: String,
+
+    payment_uri: String,
+
     status: String,
-    memo: Option<String>,
+}
+
+// 📦 listagem
+#[derive(Serialize)]
+struct OrderListItem {
+
+    id: String,
+
+    status: String,
+
+    valor_brl: f64,
+
     tx_hash: Option<String>,
 }
 
-#[derive(Deserialize)]
-struct CreateOrder {
-    valor_brl: f64,
-}
+// 🔐 gerar hmac
+fn generate_hmac(
+    payload: &str,
+) -> String {
 
-// ---------------- HASH ----------------
+    let mut mac =
+        HmacSha256::new_from_slice(
+            HMAC_SECRET.as_bytes()
+        )
+        .unwrap();
 
-fn generate_hash(input: &str) -> String {
-    let mut hasher = Sha256::new();
-    hasher.update(input.as_bytes());
-    let result = hasher.finalize();
+    mac.update(
+        payload.as_bytes()
+    );
+
+    let result =
+        mac.finalize()
+            .into_bytes();
+
     hex::encode(result)
 }
 
-// ---------------- CREATE ORDER ----------------
+// 🌐 homepage
+async fn index()
+-> impl Responder {
 
+    HttpResponse::Ok()
+        .content_type("text/html")
+        .body(
+            r#"
+            <html>
+
+                <head>
+                    <title>SlipPay</title>
+                </head>
+
+                <body
+                    style="
+                        font-family: Arial;
+                        padding: 40px;
+                    "
+                >
+
+                    <h1>
+                        🚀 SlipPay
+                    </h1>
+
+                    <p>
+                        Gateway Stellar funcionando.
+                    </p>
+
+                </body>
+
+            </html>
+            "#
+        )
+}
+
+// 💳 criar pedido
 async fn create_order(
-    pool: web::Data<SqlitePool>,
-    data: web::Json<CreateOrder>,
+
+    req: HttpRequest,
+
+    body: String,
+
+    data: web::Data<AppState>,
+
 ) -> impl Responder {
 
-    let id = Uuid::new_v4().to_string();
-    let valor_xlm = data.valor_brl / 5.0;
+    // 🔐 assinatura
+    let signature =
+        req.headers()
+            .get("x-signature")
+            .and_then(|v| v.to_str().ok())
+            .unwrap_or("");
 
-    let memo_hash = generate_hash(&id);
+    let expected =
+        generate_hmac(&body);
 
-    sqlx::query(
-        "INSERT INTO orders (id, valor_brl, valor_xlm, status, memo)
-         VALUES (?, ?, ?, ?, ?)"
-    )
-    .bind(&id)
-    .bind(data.valor_brl)
-    .bind(valor_xlm)
-    .bind("pending")
-    .bind(&memo_hash)
-    .execute(pool.get_ref())
-    .await
-    .unwrap();
+    if signature != expected {
 
-    let payment_uri = format!(
-        "stellar:{}?amount={}&memo={}",
-        MERCHANT_ADDRESS, valor_xlm, memo_hash
-    );
+        return HttpResponse::Unauthorized()
+            .body("invalid signature");
+    }
 
-    HttpResponse::Ok().json(serde_json::json!({
-        "id": id,
-        "valor_brl": data.valor_brl,
-        "valor_xlm": valor_xlm,
-        "address": MERCHANT_ADDRESS,
-        "memo": memo_hash,
-        "memo_type": "hash",
-        "payment_uri": payment_uri,
-        "status": "pending"
-    }))
-}
+    // 📦 json
+    let payload:
+        CreateOrderRequest =
+        match serde_json::from_str(&body) {
 
-// ---------------- LIST ORDERS ----------------
+            Ok(v) => v,
 
-async fn list_orders(pool: web::Data<SqlitePool>) -> impl Responder {
-    let orders = sqlx::query_as::<_, Order>(
-        "SELECT id, valor_brl, valor_xlm, status, memo, tx_hash FROM orders"
-    )
-    .fetch_all(pool.get_ref())
-    .await
-    .unwrap();
+            Err(e) => {
 
-    HttpResponse::Ok().json(orders)
-}
+                return HttpResponse::BadRequest()
+                    .body(
+                        format!(
+                            "Json deserialize error: {}",
+                            e
+                        )
+                    );
+            }
+        };
 
-// ---------------- LISTENER ----------------
+    // 🆔 id
+    let id =
+        Uuid::new_v4()
+            .to_string();
 
-async fn stellar_listener(pool: SqlitePool) {
-    loop {
-        println!("🔎 Escutando TESTNET...");
+    // 💰 conversão fake
+    let valor_xlm =
+        payload.valor_brl / 5.0;
 
-        let url = format!(
-            "https://horizon-testnet.stellar.org/accounts/{}/payments?limit=20&order=desc",
-            MERCHANT_ADDRESS
+    // 🔐 memo hash
+    let memo =
+        generate_hmac(&id);
+
+    // 🌌 payment uri
+    let payment_uri =
+        format!(
+            "stellar:{}?amount={}&memo={}&memo_type=hash",
+            STELLAR_ACCOUNT,
+            valor_xlm,
+            memo
         );
 
-        if let Ok(resp) = reqwest::get(&url).await {
-            if let Ok(json) = resp.json::<serde_json::Value>().await {
+    // 💾 salvar db
+    let conn =
+        data.db.lock()
+            .unwrap();
 
-                if let Some(records) = json["_embedded"]["records"].as_array() {
+    conn.execute(
+        "
+        INSERT INTO orders (
 
-                    for payment in records {
+            id,
+            valor_brl,
+            valor_xlm,
+            memo,
+            status
 
-                        let tx_hash = payment["transaction_hash"].as_str().unwrap_or("");
-                        let amount = payment["amount"].as_str().unwrap_or("0");
-                        let to = payment["to"].as_str().unwrap_or("");
+        )
+        VALUES (?1, ?2, ?3, ?4, ?5)
+        ",
+        params![
+            id,
+            payload.valor_brl,
+            valor_xlm,
+            memo,
+            "pending"
+        ],
+    )
+    .unwrap();
 
-                        if to != MERCHANT_ADDRESS {
-                            continue;
-                        }
+    HttpResponse::Ok()
+        .json(
+            OrderResponse {
 
-                        // Buscar dados da transação
-                        let tx_url = format!(
-                            "https://horizon-testnet.stellar.org/transactions/{}",
-                            tx_hash
-                        );
+                id,
 
-                        if let Ok(tx_resp) = reqwest::get(&tx_url).await {
-                            if let Ok(tx_json) = tx_resp.json::<serde_json::Value>().await {
+                valor_brl:
+                    payload.valor_brl,
 
-                                let memo = tx_json["memo"].as_str().unwrap_or("");
-                                let memo_type = tx_json["memo_type"].as_str().unwrap_or("");
+                valor_xlm,
 
-                                // 🔥 AGORA ACEITA APENAS HASH
-                                if memo_type != "hash" {
+                memo,
+
+                payment_uri,
+
+                status:
+                    "pending".to_string(),
+            }
+        )
+}
+
+// 📋 listar pedidos
+async fn list_orders(
+    data: web::Data<AppState>,
+)
+-> impl Responder {
+
+    let conn =
+        data.db.lock()
+            .unwrap();
+
+    let mut stmt =
+        conn.prepare(
+            "
+            SELECT
+                id,
+                status,
+                valor_brl,
+                tx_hash
+            FROM orders
+            ORDER BY rowid DESC
+            "
+        )
+        .unwrap();
+
+    let rows =
+        stmt.query_map(
+            [],
+            |row| {
+
+                Ok(
+                    OrderListItem {
+
+                        id:
+                            row.get(0)?,
+
+                        status:
+                            row.get(1)?,
+
+                        valor_brl:
+                            row.get(2)?,
+
+                        tx_hash:
+                            row.get(3)?,
+                    }
+                )
+            },
+        )
+        .unwrap();
+
+    let mut orders =
+        vec![];
+
+    for row in rows {
+
+        orders.push(
+            row.unwrap()
+        );
+    }
+
+    HttpResponse::Ok()
+        .json(orders)
+}
+
+// 🔎 listener
+async fn listener(
+    data: web::Data<AppState>,
+) {
+
+    loop {
+
+        println!(
+            "🔎 Escutando TESTNET..."
+        );
+
+        // 🔎 cursor salvo
+        let paging_token:
+            Option<String> = {
+
+            let conn =
+                data.db.lock()
+                    .unwrap();
+
+            conn.query_row(
+                "
+                SELECT paging_token
+                FROM listener_state
+                WHERE id = 1
+                ",
+                [],
+                |row| row.get(0),
+            )
+            .ok()
+        };
+
+        // 🌌 URL
+        let url =
+            match paging_token {
+
+                Some(token) => {
+
+                    format!(
+                        "https://horizon-testnet.stellar.org/accounts/{}/transactions?cursor={}&limit=10&order=asc",
+                        STELLAR_ACCOUNT,
+                        token
+                    )
+                }
+
+                None => {
+
+                    format!(
+                        "https://horizon-testnet.stellar.org/accounts/{}/transactions?limit=10&order=desc",
+                        STELLAR_ACCOUNT
+                    )
+                }
+            };
+
+        match reqwest::get(&url).await {
+
+            Ok(resp) => {
+
+                match resp
+                    .json::<serde_json::Value>()
+                    .await
+                {
+
+                    Ok(json) => {
+
+                        if let Some(records) =
+                            json["_embedded"]["records"]
+                                .as_array()
+                        {
+
+                            for tx in records {
+
+                                let memo_type =
+                                    tx["memo_type"]
+                                        .as_str()
+                                        .unwrap_or("");
+
+                                let raw_memo =
+                                    tx["memo"]
+                                        .as_str()
+                                        .unwrap_or("");
+
+                                let memo =
+
+                                    if memo_type == "hash" {
+
+                                        match general_purpose::STANDARD
+                                            .decode(raw_memo)
+                                        {
+
+                                            Ok(bytes) => {
+
+                                                hex::encode(bytes)
+                                            }
+
+                                            Err(_) => {
+
+                                                continue;
+                                            }
+                                        }
+
+                                    } else {
+
+                                        raw_memo.to_string()
+                                    };
+
+                                let hash =
+                                    tx["hash"]
+                                        .as_str()
+                                        .unwrap_or("");
+
+                                let paging =
+                                    tx["paging_token"]
+                                        .as_str()
+                                        .unwrap_or("");
+
+                                let successful =
+                                    tx["successful"]
+                                        .as_bool()
+                                        .unwrap_or(false);
+
+                                if memo.is_empty() {
+
                                     continue;
                                 }
 
-                                println!("Memo HASH recebido: {}", memo);
+                                if !successful {
 
-                                let order = sqlx::query_as::<_, Order>(
-                                    "SELECT id, valor_xlm, memo FROM orders WHERE memo = ? AND status = 'pending'"
-                                )
-                                .bind(memo)
-                                .fetch_optional(&pool)
-                                .await
-                                .unwrap();
+                                    continue;
+                                }
 
-                                if let Some(order) = order {
+                                println!(
+                                    "💰 Memo detectado: {}",
+                                    memo
+                                );
 
-                                    let expected = order.valor_xlm.unwrap_or(0.0);
-                                    let amount_f: f64 = amount.parse().unwrap_or(0.0);
+                                let conn =
+                                    data.db.lock()
+                                        .unwrap();
 
-                                    if (amount_f - expected).abs() > 0.01 {
-                                        continue;
+                                let result =
+                                    conn.execute(
+                                        "
+                                        UPDATE orders
+                                        SET
+                                            status='confirmed',
+                                            tx_hash=?1
+                                        WHERE memo=?2
+                                        AND status='pending'
+                                        ",
+                                        params![
+                                            hash,
+                                            memo
+                                        ],
+                                    );
+
+                                match result {
+
+                                    Ok(updated) => {
+
+                                        if updated > 0 {
+
+                                            println!(
+                                                "✅ Pedido confirmado!"
+                                            );
+
+                                            println!(
+                                                "🔗 TX HASH: {}",
+                                                hash
+                                            );
+                                        }
                                     }
 
-                                    println!("💰 PAGAMENTO DETECTADO: {}", order.id);
+                                    Err(e) => {
 
-                                    sqlx::query(
-                                        "UPDATE orders SET status = 'confirmed', tx_hash = ? WHERE id = ?"
-                                    )
-                                    .bind(tx_hash)
-                                    .bind(order.id)
-                                    .execute(&pool)
-                                    .await
-                                    .unwrap();
+                                        println!(
+                                            "❌ Erro DB: {:?}",
+                                            e
+                                        );
+                                    }
                                 }
+
+                                // 💾 salvar cursor SEMPRE
+                                conn.execute(
+                                    "
+                                    INSERT OR REPLACE INTO listener_state (
+                                        id,
+                                        paging_token
+                                    )
+                                    VALUES (1, ?1)
+                                    ",
+                                    params![
+                                        paging
+                                    ],
+                                )
+                                .unwrap();
                             }
                         }
                     }
+
+                    Err(e) => {
+
+                        println!(
+                            "❌ JSON error: {:?}",
+                            e
+                        );
+                    }
                 }
+            }
+
+            Err(e) => {
+
+                println!(
+                    "❌ Horizon error: {:?}",
+                    e
+                );
             }
         }
 
-        tokio::time::sleep(std::time::Duration::from_secs(5)).await;
+        sleep(
+            Duration::from_secs(5)
+        ).await;
     }
 }
 
-// ---------------- MAIN ----------------
-
+// 🚀 main
 #[actix_web::main]
-async fn main() -> std::io::Result<()> {
+async fn main()
+-> std::io::Result<()> {
 
-    let pool = SqlitePool::connect("sqlite:slippay.db").await.unwrap();
+    // 💾 sqlite
+    let conn =
+        Connection::open(
+            "slippay.db"
+        )
+        .unwrap();
 
-    sqlx::query(
-        "CREATE TABLE IF NOT EXISTS orders (
+    conn.execute(
+        "
+        CREATE TABLE IF NOT EXISTS orders (
+
             id TEXT PRIMARY KEY,
-            valor_brl REAL,
-            valor_xlm REAL,
-            status TEXT,
-            memo TEXT,
-            tx_hash TEXT
-        )"
+
+            valor_brl REAL NOT NULL,
+
+            valor_xlm REAL NOT NULL,
+
+            memo TEXT NOT NULL,
+
+            tx_hash TEXT,
+
+            status TEXT NOT NULL
+        )
+        ",
+        [],
     )
-    .execute(&pool)
-    .await
     .unwrap();
 
-    let listener_pool = pool.clone();
-    tokio::spawn(async move {
-        stellar_listener(listener_pool).await;
-    });
+    conn.execute(
+        "
+        CREATE TABLE IF NOT EXISTS listener_state (
 
-    println!("🚀 SlipPay HASH (PROD) rodando + listener ativo");
+            id INTEGER PRIMARY KEY,
 
-    HttpServer::new(move || {
-        App::new()
-            .app_data(web::Data::new(pool.clone()))
-            .route("/orders", web::post().to(create_order))
-            .route("/orders", web::get().to(list_orders))
-    })
-    .bind(("127.0.0.1", 8081))?
+            paging_token TEXT
+        )
+        ",
+        [],
+    )
+    .unwrap();
+
+    let data =
+        web::Data::new(
+            AppState {
+
+                db:
+                    Mutex::new(conn),
+            }
+        );
+
+    // 🔎 listener
+    let listener_data =
+        data.clone();
+
+    tokio::spawn(
+        async move {
+
+            listener(
+                listener_data
+            ).await;
+        }
+    );
+
+    println!(
+        "🚀 SlipPay SEGURO rodando + listener ativo"
+    );
+
+    // 🌐 servidor
+    HttpServer::new(
+        move || {
+
+            App::new()
+
+                .app_data(
+                    data.clone()
+                )
+
+                .route(
+                    "/",
+                    web::get()
+                        .to(index),
+                )
+
+                .route(
+                    "/orders",
+                    web::post()
+                        .to(create_order),
+                )
+
+                .route(
+                    "/orders",
+                    web::get()
+                        .to(list_orders),
+                )
+        }
+    )
+    .bind((
+        "127.0.0.1",
+        8081
+    ))?
     .run()
     .await
 }
