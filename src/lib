@@ -1,0 +1,61 @@
+use rust_decimal::Decimal;
+use rust_decimal_macros::dec;
+
+/// Converte BRL para XLM usando uma taxa fixa.
+/// Exemplo: 100 BRL com taxa 2.0 → 50 XLM
+pub fn brl_to_xlm(valor_brl: Decimal, taxa: Decimal) -> Decimal {
+    valor_brl / taxa
+}
+
+/// Estrutura de uma cobrança
+#[derive(Debug, PartialEq)]
+pub struct Charge {
+    pub id: i32,
+    pub amount: Decimal,
+    pub status: String,
+}
+
+impl Charge {
+    /// Cria uma nova cobrança com status inicial "pending"
+    pub fn new(id: i32, amount: Decimal) -> Self {
+        Charge {
+            id,
+            amount,
+            status: "pending".to_string(),
+        }
+    }
+
+    /// Confirma a cobrança
+    pub fn confirm(&mut self) {
+        self.status = "confirmed".to_string();
+    }
+}
+
+// ----------------------
+// Testes automatizados
+// ----------------------
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_conversao_brl_para_xlm() {
+        let resultado = brl_to_xlm(dec!(100), dec!(2));
+        assert_eq!(resultado, dec!(50));
+    }
+
+    #[test]
+    fn test_criacao_cobranca() {
+        let c = Charge::new(1, dec!(150));
+        assert_eq!(c.id, 1);
+        assert_eq!(c.amount, dec!(150));
+        assert_eq!(c.status, "pending");
+    }
+
+    #[test]
+    fn test_confirmacao_cobranca() {
+        let mut c = Charge::new(2, dec!(200));
+        c.confirm();
+        assert_eq!(c.status, "confirmed");
+    }
+}
