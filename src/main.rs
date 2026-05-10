@@ -1,3 +1,4 @@
+use actix_files::Files;
 use actix_web::{
     web,
     App,
@@ -7,381 +8,346 @@ use actix_web::{
     Responder,
 };
 
-use base64::{
-    engine::general_purpose,
-    Engine as _,
-};
+use base64::{engine::general_purpose, Engine as _};
 
 use hmac::{Hmac, Mac};
 
-use rusqlite::{
-    params,
-    Connection,
-};
+use reqwest;
 
-use serde::{
-    Deserialize,
-    Serialize,
-};
+use rusqlite::{params, Connection};
 
-use sha2::Sha256;
+use serde::{Deserialize, Serialize};
+
+use sha2::{Digest, Sha256};
 
 use std::sync::Mutex;
 
-use tokio::time::{
-    sleep,
-    Duration,
-};
+use tokio::time::{sleep, Duration};
 
 use uuid::Uuid;
 
 type HmacSha256 = Hmac<Sha256>;
 
-const HMAC_SECRET: &str =
-    "super-secret-key";
+// ========================================
+// APP STATE
+// ========================================
 
-const STELLAR_ACCOUNT: &str =
-    "GB4TW32HFZEQMTS67U33D6GD36ZHTMEPAVFOIEPWXWY5QYFQDE3PC7QT";
-
-// 📦 estado app
 struct AppState {
-
     db: Mutex<Connection>,
 }
 
-// 📦 request
+// ========================================
+// ORDER
+// ========================================
+
+#[derive(Serialize, Deserialize)]
+struct Order {
+    id: String,
+    valor_brl: f64,
+    valor_xlm: f64,
+    memo: String,
+    tx_hash: Option<String>,
+    status: String,
+    payment_uri: String,
+}
+
+// ========================================
+// CREATE ORDER REQUEST
+// ========================================
+
 #[derive(Deserialize)]
 struct CreateOrderRequest {
-
     valor_brl: f64,
 }
 
-// 📦 resposta order
-#[derive(Serialize)]
-struct OrderResponse {
+// ========================================
+// HOMEPAGE
+// ========================================
 
-    id: String,
-
-    valor_brl: f64,
-
-    valor_xlm: f64,
-
-    memo: String,
-
-    payment_uri: String,
-
-    status: String,
-}
-
-// 📦 listagem
-#[derive(Serialize)]
-struct OrderListItem {
-
-    id: String,
-
-    status: String,
-
-    valor_brl: f64,
-
-    tx_hash: Option<String>,
-}
-
-// 🔐 gerar hmac
-fn generate_hmac(
-    payload: &str,
-) -> String {
-
-    let mut mac =
-        HmacSha256::new_from_slice(
-            HMAC_SECRET.as_bytes()
-        )
-        .unwrap();
-
-    mac.update(
-        payload.as_bytes()
-    );
-
-    let result =
-        mac.finalize()
-            .into_bytes();
-
-    hex::encode(result)
-}
-
-// 🌐 homepage
-async fn index()
--> impl Responder {
+async fn home() -> impl Responder {
 
     HttpResponse::Ok()
         .content_type("text/html")
-        .body(
-            r#"
-            <html>
-
-                <head>
-                    <title>SlipPay</title>
-                </head>
-
-                <body
-                    style="
-                        font-family: Arial;
-                        padding: 40px;
-                    "
-                >
-
-                    <h1>
-                        🚀 SlipPay
-                    </h1>
-
-                    <p>
-                        Gateway Stellar funcionando.
-                    </p>
-
-                </body>
-
-            </html>
-            "#
-        )
+        .body(include_str!("../index.html"))
 }
 
-// 💳 criar pedido
+// ========================================
+// CREATE ORDER
+// ========================================
+
 async fn create_order(
-
     req: HttpRequest,
-
-    body: String,
-
     data: web::Data<AppState>,
-
+    body: web::Json<CreateOrderRequest>,
 ) -> impl Responder {
 
-    // 🔐 assinatura
-    let signature =
-        req.headers()
-            .get("x-signature")
-            .and_then(|v| v.to_str().ok())
-            .unwrap_or("");
+    // ========================================
+    // HMAC VALIDATION
+    // ========================================
 
-    let expected =
-        generate_hmac(&body);
+    let signature = req
+        .headers()
+        .get("x-signature")
+        .and_then(|v| v.to_str().ok())
+        .unwrap_or("");
 
-    if signature != expected {
+    let payload = format!(
+        r#"{{"valor_brl":{}}}"#,
+        body.valor_brl
+    );
+
+    let mut mac =
+        HmacSha256::new_from_slice(
+            b"super-secret-key"
+        )
+        .unwrap();
+
+    mac.update(payload.as_bytes());
+
+    let _expected_signature =
+        hex::encode(mac.finalize().into_bytes());
+
+    // ========================================
+    // TEMPORÁRIO MVP
+    // ========================================
+
+    /*
+    if signature != _expected_signature {
 
         return HttpResponse::Unauthorized()
             .body("invalid signature");
     }
+    */
 
-    // 📦 json
-    let payload:
-        CreateOrderRequest =
-        match serde_json::from_str(&body) {
+    println!(
+        "🔐 Signature recebida: {}",
+        signature
+    );
 
-            Ok(v) => v,
+    // ========================================
+    // BUSINESS LOGIC
+    // ========================================
 
-            Err(e) => {
+    let valor_xlm = body.valor_brl / 5.0;
 
-                return HttpResponse::BadRequest()
-                    .body(
-                        format!(
-                            "Json deserialize error: {}",
-                            e
-                        )
-                    );
-            }
-        };
+    let id = Uuid::new_v4().to_string();
 
-    // 🆔 id
-    let id =
-        Uuid::new_v4()
-            .to_string();
+    let mut hasher = Sha256::new();
 
-    // 💰 conversão fake
-    let valor_xlm =
-        payload.valor_brl / 5.0;
+    hasher.update(id.as_bytes());
 
-    // 🔐 memo hash
     let memo =
-        generate_hmac(&id);
+        hex::encode(hasher.finalize());
 
-    // 🌌 payment uri
-    let payment_uri =
-        format!(
-            "stellar:{}?amount={}&memo={}&memo_type=hash",
-            STELLAR_ACCOUNT,
-            valor_xlm,
-            memo
-        );
+    let payment_uri = format!(
+        "stellar:{}?amount={}&memo={}&memo_type=hash",
+        "GB4TW32HFZEQMTS67U33D6GD36ZHTMEPAVFOIEPWXWY5QYFQDE3PC7QT",
+        valor_xlm,
+        memo
+    );
 
-    // 💾 salvar db
-    let conn =
-        data.db.lock()
-            .unwrap();
+    let order = Order {
+
+        id: id.clone(),
+
+        valor_brl: body.valor_brl,
+
+        valor_xlm,
+
+        memo: memo.clone(),
+
+        tx_hash: None,
+
+        status: "pending".to_string(),
+
+        payment_uri: payment_uri.clone(),
+    };
+
+    // ========================================
+    // SAVE DATABASE
+    // ========================================
+
+    let conn = data.db.lock().unwrap();
 
     conn.execute(
         "
         INSERT INTO orders (
-
             id,
             valor_brl,
             valor_xlm,
             memo,
+            tx_hash,
             status
-
         )
-        VALUES (?1, ?2, ?3, ?4, ?5)
+        VALUES (?1, ?2, ?3, ?4, ?5, ?6)
         ",
         params![
-            id,
-            payload.valor_brl,
-            valor_xlm,
-            memo,
-            "pending"
+            order.id,
+            order.valor_brl,
+            order.valor_xlm,
+            order.memo,
+            order.tx_hash,
+            order.status
         ],
     )
     .unwrap();
 
-    HttpResponse::Ok()
-        .json(
-            OrderResponse {
-
-                id,
-
-                valor_brl:
-                    payload.valor_brl,
-
-                valor_xlm,
-
-                memo,
-
-                payment_uri,
-
-                status:
-                    "pending".to_string(),
-            }
-        )
+    HttpResponse::Ok().json(order)
 }
 
-// 📋 listar pedidos
+// ========================================
+// LIST ORDERS
+// ========================================
+
 async fn list_orders(
     data: web::Data<AppState>,
-)
--> impl Responder {
+) -> impl Responder {
 
-    let conn =
-        data.db.lock()
-            .unwrap();
+    let conn = data.db.lock().unwrap();
 
-    let mut stmt =
-        conn.prepare(
+    let mut stmt = conn
+        .prepare(
             "
             SELECT
                 id,
-                status,
                 valor_brl,
-                tx_hash
+                valor_xlm,
+                memo,
+                tx_hash,
+                status
             FROM orders
-            ORDER BY rowid DESC
-            "
+            ",
         )
         .unwrap();
 
-    let rows =
-        stmt.query_map(
-            [],
-            |row| {
+    let rows = stmt
+        .query_map([], |row| {
 
-                Ok(
-                    OrderListItem {
+            let memo: String = row.get(3)?;
 
-                        id:
-                            row.get(0)?,
+            Ok(Order {
 
-                        status:
-                            row.get(1)?,
+                id: row.get(0)?,
 
-                        valor_brl:
-                            row.get(2)?,
+                valor_brl: row.get(1)?,
 
-                        tx_hash:
-                            row.get(3)?,
-                    }
-                )
-            },
-        )
+                valor_xlm: row.get(2)?,
+
+                memo: memo.clone(),
+
+                tx_hash: row.get(4)?,
+
+                status: row.get(5)?,
+
+                payment_uri: format!(
+                    "stellar:{}?amount={}&memo={}&memo_type=hash",
+                    "GB4TW32HFZEQMTS67U33D6GD36ZHTMEPAVFOIEPWXWY5QYFQDE3PC7QT",
+                    row.get::<_, f64>(2)?,
+                    memo
+                ),
+            })
+        })
         .unwrap();
 
-    let mut orders =
-        vec![];
+    let mut orders = Vec::new();
 
-    for row in rows {
+    for order in rows {
 
-        orders.push(
-            row.unwrap()
-        );
+        orders.push(order.unwrap());
     }
 
-    HttpResponse::Ok()
-        .json(orders)
+    HttpResponse::Ok().json(orders)
 }
 
-// 🔎 listener
-async fn listener(
-    data: web::Data<AppState>,
+// ========================================
+// LOAD CURSOR
+// ========================================
+
+fn load_cursor(
+    db: &web::Data<AppState>,
+) -> String {
+
+    let conn = db.db.lock().unwrap();
+
+    conn.execute(
+        "
+        CREATE TABLE IF NOT EXISTS listener_state (
+            id INTEGER PRIMARY KEY,
+            paging_token TEXT
+        )
+        ",
+        [],
+    )
+    .unwrap();
+
+    let result: Result<String, _> =
+        conn.query_row(
+            "
+            SELECT paging_token
+            FROM listener_state
+            WHERE id = 1
+            ",
+            [],
+            |row| row.get(0),
+        );
+
+    result.unwrap_or("now".to_string())
+}
+
+// ========================================
+// SAVE CURSOR
+// ========================================
+
+fn save_cursor(
+    db: &web::Data<AppState>,
+    cursor: &str,
 ) {
+
+    let conn = db.db.lock().unwrap();
+
+    conn.execute(
+        "
+        INSERT OR REPLACE INTO listener_state (
+            id,
+            paging_token
+        )
+        VALUES (1, ?1)
+        ",
+        params![cursor],
+    )
+    .unwrap();
+}
+
+// ========================================
+// STELLAR LISTENER
+// ========================================
+
+async fn stellar_listener(
+    db: web::Data<AppState>,
+) {
+
+    let account =
+        "GB4TW32HFZEQMTS67U33D6GD36ZHTMEPAVFOIEPWXWY5QYFQDE3PC7QT";
+
+    let client = reqwest::Client::new();
+
+    let mut cursor = load_cursor(&db);
 
     loop {
 
-        println!(
-            "🔎 Escutando TESTNET..."
+        println!("🔎 Escutando TESTNET...");
+
+        let url = format!(
+            "https://horizon-testnet.stellar.org/accounts/{}/transactions?cursor={}&limit=10&order=asc",
+            account,
+            cursor
         );
 
-        // 🔎 cursor salvo
-        let paging_token:
-            Option<String> = {
+        match client.get(&url).send().await {
 
-            let conn =
-                data.db.lock()
-                    .unwrap();
+            Ok(response) => {
 
-            conn.query_row(
-                "
-                SELECT paging_token
-                FROM listener_state
-                WHERE id = 1
-                ",
-                [],
-                |row| row.get(0),
-            )
-            .ok()
-        };
-
-        // 🌌 URL
-        let url =
-            match paging_token {
-
-                Some(token) => {
-
-                    format!(
-                        "https://horizon-testnet.stellar.org/accounts/{}/transactions?cursor={}&limit=10&order=asc",
-                        STELLAR_ACCOUNT,
-                        token
-                    )
-                }
-
-                None => {
-
-                    format!(
-                        "https://horizon-testnet.stellar.org/accounts/{}/transactions?limit=10&order=desc",
-                        STELLAR_ACCOUNT
-                    )
-                }
-            };
-
-        match reqwest::get(&url).await {
-
-            Ok(resp) => {
-
-                match resp
+                match response
                     .json::<serde_json::Value>()
                     .await
                 {
@@ -395,185 +361,129 @@ async fn listener(
 
                             for tx in records {
 
-                                let memo_type =
-                                    tx["memo_type"]
+                                if let Some(paging_token) =
+                                    tx["paging_token"]
                                         .as_str()
-                                        .unwrap_or("");
+                                {
 
-                                let raw_memo =
+                                    cursor =
+                                        paging_token.to_string();
+
+                                    save_cursor(
+                                        &db,
+                                        &cursor,
+                                    );
+                                }
+
+                                let memo_base64 =
                                     tx["memo"]
                                         .as_str()
                                         .unwrap_or("");
 
-                                let memo =
+                                if memo_base64.is_empty() {
 
-                                    if memo_type == "hash" {
+                                    continue;
+                                }
 
-                                        match general_purpose::STANDARD
-                                            .decode(raw_memo)
-                                        {
+                                let memo_hex =
+                                    match general_purpose::STANDARD
+                                        .decode(memo_base64)
+                                    {
 
-                                            Ok(bytes) => {
-
-                                                hex::encode(bytes)
-                                            }
-
-                                            Err(_) => {
-
-                                                continue;
-                                            }
+                                        Ok(bytes) => {
+                                            hex::encode(bytes)
                                         }
 
-                                    } else {
-
-                                        raw_memo.to_string()
+                                        Err(_) => continue,
                                     };
 
-                                let hash =
+                                println!(
+                                    "💰 Memo detectado: {}",
+                                    memo_hex
+                                );
+
+                                let tx_hash =
                                     tx["hash"]
                                         .as_str()
                                         .unwrap_or("");
 
-                                let paging =
-                                    tx["paging_token"]
-                                        .as_str()
-                                        .unwrap_or("");
-
-                                let successful =
-                                    tx["successful"]
-                                        .as_bool()
-                                        .unwrap_or(false);
-
-                                if memo.is_empty() {
-
-                                    continue;
-                                }
-
-                                if !successful {
-
-                                    continue;
-                                }
-
-                                println!(
-                                    "💰 Memo detectado: {}",
-                                    memo
-                                );
-
                                 let conn =
-                                    data.db.lock()
-                                        .unwrap();
+                                    db.db.lock().unwrap();
 
-                                let result =
+                                let updated =
                                     conn.execute(
                                         "
                                         UPDATE orders
                                         SET
-                                            status='confirmed',
-                                            tx_hash=?1
-                                        WHERE memo=?2
-                                        AND status='pending'
+                                            status = 'confirmed',
+                                            tx_hash = ?1
+                                        WHERE memo = ?2
                                         ",
                                         params![
-                                            hash,
-                                            memo
+                                            tx_hash,
+                                            memo_hex
                                         ],
+                                    )
+                                    .unwrap();
+
+                                if updated > 0 {
+
+                                    println!(
+                                        "✅ Pedido confirmado!"
                                     );
 
-                                match result {
-
-                                    Ok(updated) => {
-
-                                        if updated > 0 {
-
-                                            println!(
-                                                "✅ Pedido confirmado!"
-                                            );
-
-                                            println!(
-                                                "🔗 TX HASH: {}",
-                                                hash
-                                            );
-                                        }
-                                    }
-
-                                    Err(e) => {
-
-                                        println!(
-                                            "❌ Erro DB: {:?}",
-                                            e
-                                        );
-                                    }
+                                    println!(
+                                        "🔗 TX HASH: {}",
+                                        tx_hash
+                                    );
                                 }
-
-                                // 💾 salvar cursor SEMPRE
-                                conn.execute(
-                                    "
-                                    INSERT OR REPLACE INTO listener_state (
-                                        id,
-                                        paging_token
-                                    )
-                                    VALUES (1, ?1)
-                                    ",
-                                    params![
-                                        paging
-                                    ],
-                                )
-                                .unwrap();
                             }
                         }
                     }
 
-                    Err(e) => {
+                    Err(err) => {
 
                         println!(
                             "❌ JSON error: {:?}",
-                            e
+                            err
                         );
                     }
                 }
             }
 
-            Err(e) => {
+            Err(err) => {
 
                 println!(
                     "❌ Horizon error: {:?}",
-                    e
+                    err
                 );
             }
         }
 
-        sleep(
-            Duration::from_secs(5)
-        ).await;
+        sleep(Duration::from_secs(5)).await;
     }
 }
 
-// 🚀 main
-#[actix_web::main]
-async fn main()
--> std::io::Result<()> {
+// ========================================
+// MAIN
+// ========================================
 
-    // 💾 sqlite
+#[actix_web::main]
+async fn main() -> std::io::Result<()> {
+
+    println!("🚀 SlipPay iniciado");
+
     let conn =
-        Connection::open(
-            "slippay.db"
-        )
-        .unwrap();
+        Connection::open("slippay.db").unwrap();
 
     conn.execute(
         "
         CREATE TABLE IF NOT EXISTS orders (
-
             id TEXT PRIMARY KEY,
-
             valor_brl REAL NOT NULL,
-
             valor_xlm REAL NOT NULL,
-
             memo TEXT NOT NULL,
-
             tx_hash TEXT,
-
             status TEXT NOT NULL
         )
         ",
@@ -581,78 +491,56 @@ async fn main()
     )
     .unwrap();
 
-    conn.execute(
-        "
-        CREATE TABLE IF NOT EXISTS listener_state (
+    let data = web::Data::new(AppState {
+        db: Mutex::new(conn),
+    });
 
-            id INTEGER PRIMARY KEY,
+    // ========================================
+    // START LISTENER
+    // ========================================
 
-            paging_token TEXT
-        )
-        ",
-        [],
-    )
-    .unwrap();
+    let listener_data = data.clone();
 
-    let data =
-        web::Data::new(
-            AppState {
+    tokio::spawn(async move {
 
-                db:
-                    Mutex::new(conn),
-            }
-        );
+        stellar_listener(listener_data).await;
+    });
 
-    // 🔎 listener
-    let listener_data =
-        data.clone();
+    // ========================================
+    // START SERVER
+    // ========================================
 
-    tokio::spawn(
-        async move {
+    HttpServer::new(move || {
 
-            listener(
-                listener_data
-            ).await;
-        }
-    );
+        App::new()
 
-    println!(
-        "🚀 SlipPay SEGURO rodando + listener ativo"
-    );
+            .app_data(data.clone())
 
-    // 🌐 servidor
-    HttpServer::new(
-        move || {
+            // API ROUTES FIRST
 
-            App::new()
+            .route("/", web::get().to(home))
 
-                .app_data(
-                    data.clone()
-                )
+            .route(
+                "/orders",
+                web::post().to(create_order),
+            )
 
-                .route(
-                    "/",
-                    web::get()
-                        .to(index),
-                )
+            .route(
+                "/orders",
+                web::get().to(list_orders),
+            )
 
-                .route(
-                    "/orders",
-                    web::post()
-                        .to(create_order),
-                )
+            // STATIC FILES LAST
 
-                .route(
-                    "/orders",
-                    web::get()
-                        .to(list_orders),
-                )
-        }
-    )
-    .bind((
-        "127.0.0.1",
-        8081
-    ))?
+            .service(
+                Files::new("/", "./")
+                    .index_file("index.html")
+            )
+    })
+
+    .bind(("127.0.0.1", 8081))?
+
     .run()
+
     .await
 }

@@ -1,64 +1,98 @@
 <!DOCTYPE html>
-<html>
+<html lang="pt-BR">
+
 <head>
-  <meta charset="UTF-8">
-  <title>SlipPay Test</title>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+
+    <title>SlipPay</title>
+
+    <link rel="stylesheet" href="style.css">
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+
 </head>
+
 <body>
 
-<h2>Pagamento com Stellar</h2>
+<div class="container">
 
-<button onclick="criarPedido()">Gerar Pagamento</button>
+    <h1>🚀 SlipPay</h1>
 
-<div id="resultado"></div>
+    <p class="subtitle">
+        Gateway Stellar Testnet
+    </p>
 
-<script>
-async function criarPedido() {
-  const payload = JSON.stringify({ valor_brl: 100 });
+    <div class="card">
 
-  // gerar assinatura igual backend
-  const encoder = new TextEncoder();
-  const key = await crypto.subtle.importKey(
-    "raw",
-    encoder.encode("super-secret-key"),
-    { name: "HMAC", hash: "SHA-256" },
-    false,
-    ["sign"]
-  );
+        <label>
+            Valor em BRL
+        </label>
 
-  const signature = await crypto.subtle.sign(
-    "HMAC",
-    key,
-    encoder.encode(payload)
-  );
+        <input
+            type="number"
+            id="valor"
+            placeholder="100"
+        />
 
-  const hex = Array.from(new Uint8Array(signature))
-    .map(b => b.toString(16).padStart(2, '0'))
-    .join('');
+        <button onclick="criarPedido()">
+            Criar Cobrança
+        </button>
 
-  const res = await fetch("http://127.0.0.1:8081/orders", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "x-signature": hex
-    },
-    body: payload
-  });
+    </div>
 
-  const data = await res.json();
+    <div id="resultado" class="hidden">
 
-  document.getElementById("resultado").innerHTML = `
-    <p><b>Valor:</b> ${data.valor_xlm} XLM</p>
-    <p><b>Status:</b> ${data.status}</p>
+        <div class="card">
 
-    <a href="${data.payment_uri}">
-      👉 Pagar com Stellar
-    </a>
+            <h2>Pagamento</h2>
 
-    <p><b>Memo:</b> ${data.memo}</p>
-  `;
-}
-</script>
+            <p>
+                <strong>Valor:</strong>
+
+                <span id="valor_xlm"></span> XLM
+            </p>
+
+            <div class="status-box">
+
+                <span id="status" class="pending">
+                    Aguardando pagamento...
+                </span>
+
+            </div>
+
+            <p class="memo-title">
+                Memo Hash
+            </p>
+
+            <textarea
+                id="memo"
+                readonly
+            ></textarea>
+
+            <div id="qrcode"></div>
+
+            <a
+                id="stellar_link"
+                target="_blank"
+            >
+                Abrir Wallet Stellar
+            </a>
+
+        </div>
+
+    </div>
+
+    <div class="footer">
+        SlipPay MVP • Stellar Testnet
+    </div>
+
+</div>
+
+<script src="app.js"></script>
 
 </body>
 </html>
