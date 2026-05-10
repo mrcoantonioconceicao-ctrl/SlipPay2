@@ -16,6 +16,9 @@ use reqwest;
 
 use rusqlite::{params, Connection};
 
+use rust_decimal::Decimal;
+use rust_decimal_macros::dec;
+
 use serde::{Deserialize, Serialize};
 
 use sha2::{Digest, Sha256};
@@ -43,11 +46,17 @@ struct AppState {
 #[derive(Serialize, Deserialize)]
 struct Order {
     id: String,
-    valor_brl: f64,
-    valor_xlm: f64,
+
+    valor_brl: Decimal,
+
+    valor_xlm: Decimal,
+
     memo: String,
+
     tx_hash: Option<String>,
+
     status: String,
+
     payment_uri: String,
 }
 
@@ -57,7 +66,7 @@ struct Order {
 
 #[derive(Deserialize)]
 struct CreateOrderRequest {
-    valor_brl: f64,
+    valor_brl: Decimal,
 }
 
 // ========================================
@@ -108,7 +117,7 @@ async fn create_order(
         hex::encode(mac.finalize().into_bytes());
 
     // ========================================
-    // TEMPORÁRIO MVP
+    // MVP TEMP
     // ========================================
 
     /*
@@ -128,7 +137,8 @@ async fn create_order(
     // BUSINESS LOGIC
     // ========================================
 
-    let valor_xlm = body.valor_brl / 5.0;
+    let valor_xlm =
+        body.valor_brl / dec!(5);
 
     let id = Uuid::new_v4().to_string();
 
@@ -183,8 +193,8 @@ async fn create_order(
         ",
         params![
             order.id,
-            order.valor_brl,
-            order.valor_xlm,
+            order.valor_brl.to_string(),
+            order.valor_xlm.to_string(),
             order.memo,
             order.tx_hash,
             order.status
@@ -225,13 +235,25 @@ async fn list_orders(
 
             let memo: String = row.get(3)?;
 
+            let valor_brl: Decimal =
+                row
+                    .get::<_, String>(1)?
+                    .parse::<Decimal>()
+                    .unwrap();
+
+            let valor_xlm: Decimal =
+                row
+                    .get::<_, String>(2)?
+                    .parse::<Decimal>()
+                    .unwrap();
+
             Ok(Order {
 
                 id: row.get(0)?,
 
-                valor_brl: row.get(1)?,
+                valor_brl,
 
-                valor_xlm: row.get(2)?,
+                valor_xlm,
 
                 memo: memo.clone(),
 
@@ -242,7 +264,7 @@ async fn list_orders(
                 payment_uri: format!(
                     "stellar:{}?amount={}&memo={}&memo_type=hash",
                     "GB4TW32HFZEQMTS67U33D6GD36ZHTMEPAVFOIEPWXWY5QYFQDE3PC7QT",
-                    row.get::<_, f64>(2)?,
+                    valor_xlm,
                     memo
                 ),
             })
@@ -480,8 +502,8 @@ async fn main() -> std::io::Result<()> {
         "
         CREATE TABLE IF NOT EXISTS orders (
             id TEXT PRIMARY KEY,
-            valor_brl REAL NOT NULL,
-            valor_xlm REAL NOT NULL,
+            valor_brl TEXT NOT NULL,
+            valor_xlm TEXT NOT NULL,
             memo TEXT NOT NULL,
             tx_hash TEXT,
             status TEXT NOT NULL
