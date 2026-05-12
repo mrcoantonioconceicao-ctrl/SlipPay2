@@ -5,32 +5,33 @@ edition = "2021"
 
 [dependencies]
 
-# WEB
+# WEB SERVER
 actix-web = "4"
-actix-files = "0.6"
 
-# ASYNC
-tokio = { version = "1", features = ["full"] }
+# SERIALIZAÇÃO
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+# DATABASE
+rusqlite = { version = "0.32", features = ["bundled"] }
 
 # HTTP CLIENT
 reqwest = { version = "0.12", features = ["json"] }
 
-# DATABASE
-rusqlite = { version = "0.31", features = ["bundled"] }
-
-# SERIALIZATION
-serde = { version = "1", features = ["derive"] }
-serde_json = "1"
-
 # UUID
-uuid = { version = "1", features = ["v4"] }
+uuid = { version = "1", features = ["v4", "serde"] }
 
-# CRYPTO
-sha2 = "0.10"
-hmac = "0.12"
-hex = "0.4"
-base64 = "0.22"
-
-# DECIMAL PRECISION
+# DECIMAL MONEY SAFE
 rust_decimal = { version = "1", features = ["serde"] }
 rust_decimal_macros = "1"
+
+# STELLAR
+stellar_sdk = "0.1.4"
+
+# ASYNC
+tokio = { version = "1", features = ["full"] }
+
+# CRYPTO / WEBHOOK SIGNATURE
+hmac = "0.12"
+sha2 = "0.10"
+hex = "0.4"

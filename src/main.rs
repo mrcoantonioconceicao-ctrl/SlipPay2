@@ -1,566 +1,278 @@
-use actix_files::Files;
+mod stellar;
+mod reconciler;
+mod db;
+mod webhook;
+mod listener;
+
 use actix_web::{
     web,
     App,
-    HttpRequest,
     HttpResponse,
     HttpServer,
     Responder,
 };
 
-use base64::{engine::general_purpose, Engine as _};
-
-use hmac::{Hmac, Mac};
-
-use reqwest;
-
-use rusqlite::{params, Connection};
-
-use rust_decimal::Decimal;
-use rust_decimal_macros::dec;
+use rusqlite::Connection;
 
 use serde::{Deserialize, Serialize};
 
-use sha2::{Digest, Sha256};
-
 use std::sync::Mutex;
-
-use tokio::time::{sleep, Duration};
 
 use uuid::Uuid;
 
-type HmacSha256 = Hmac<Sha256>;
+use rust_decimal::Decimal;
 
-// ========================================
-// APP STATE
-// ========================================
+use rust_decimal_macros::dec;
 
-struct AppState {
-    db: Mutex<Connection>,
+use tokio::spawn;
+
+use db::{
+    Charge,
+    create_charge,
+    get_charge_by_memo,
+};
+
+#[derive(Deserialize)]
+struct CreateChargeRequest {
+
+    brl_amount: Decimal,
 }
 
-// ========================================
-// ORDER
-// ========================================
+#[derive(Serialize)]
+struct CreateChargeResponse {
 
-#[derive(Serialize, Deserialize)]
-struct Order {
     id: String,
-
-    valor_brl: Decimal,
-
-    valor_xlm: Decimal,
 
     memo: String,
 
-    tx_hash: Option<String>,
+    xlm_amount: Decimal,
 
     status: String,
-
-    payment_uri: String,
 }
-
-// ========================================
-// CREATE ORDER REQUEST
-// ========================================
 
 #[derive(Deserialize)]
-struct CreateOrderRequest {
-    valor_brl: Decimal,
+struct ConfirmPaymentRequest {
+
+    tx_hash: String,
 }
 
-// ========================================
-// HOMEPAGE
-// ========================================
+struct AppState {
 
-async fn home() -> impl Responder {
-
-    HttpResponse::Ok()
-        .content_type("text/html")
-        .body(include_str!("../index.html"))
+    db: Mutex<Connection>,
 }
 
-// ========================================
-// CREATE ORDER
-// ========================================
+async fn health() -> impl Responder {
 
-async fn create_order(
-    req: HttpRequest,
+    HttpResponse::Ok().body("ok")
+}
+
+async fn create_charge_handler(
     data: web::Data<AppState>,
-    body: web::Json<CreateOrderRequest>,
+    body: web::Json<CreateChargeRequest>,
 ) -> impl Responder {
 
-    // ========================================
-    // HMAC VALIDATION
-    // ========================================
+    let conn =
+        data.db.lock().unwrap();
 
-    let signature = req
-        .headers()
-        .get("x-signature")
-        .and_then(|v| v.to_str().ok())
-        .unwrap_or("");
-
-    let payload = format!(
-        r#"{{"valor_brl":{}}}"#,
-        body.valor_brl
-    );
-
-    let mut mac =
-        HmacSha256::new_from_slice(
-            b"super-secret-key"
-        )
-        .unwrap();
-
-    mac.update(payload.as_bytes());
-
-    let _expected_signature =
-        hex::encode(mac.finalize().into_bytes());
-
-    // ========================================
-    // MVP TEMP
-    // ========================================
-
-    /*
-    if signature != _expected_signature {
-
-        return HttpResponse::Unauthorized()
-            .body("invalid signature");
-    }
-    */
-
-    println!(
-        "🔐 Signature recebida: {}",
-        signature
-    );
-
-    // ========================================
-    // BUSINESS LOGIC
-    // ========================================
-
-    let valor_xlm =
-        body.valor_brl / dec!(5);
-
-    let id = Uuid::new_v4().to_string();
-
-    let mut hasher = Sha256::new();
-
-    hasher.update(id.as_bytes());
+    let id =
+        Uuid::new_v4().to_string();
 
     let memo =
-        hex::encode(hasher.finalize());
+        Uuid::new_v4()
+            .simple()
+            .to_string();
 
-    let payment_uri = format!(
-        "stellar:{}?amount={}&memo={}&memo_type=hash",
-        "GB4TW32HFZEQMTS67U33D6GD36ZHTMEPAVFOIEPWXWY5QYFQDE3PC7QT",
-        valor_xlm,
-        memo
-    );
+    let rate =
+        dec!(5.0);
 
-    let order = Order {
+    let xlm_amount =
+        body.brl_amount / rate;
 
-        id: id.clone(),
+    match create_charge(
+        &conn,
+        body.brl_amount,
+        &memo,
+        &id,
+    ) {
 
-        valor_brl: body.valor_brl,
+        Ok(_) => {
 
-        valor_xlm,
+            let response =
+                CreateChargeResponse {
 
-        memo: memo.clone(),
+                    id,
 
-        tx_hash: None,
+                    memo,
 
-        status: "pending".to_string(),
+                    xlm_amount,
 
-        payment_uri: payment_uri.clone(),
-    };
+                    status:
+                        "pending".to_string(),
+                };
 
-    // ========================================
-    // SAVE DATABASE
-    // ========================================
+            HttpResponse::Ok().json(
+                response
+            )
+        }
 
-    let conn = data.db.lock().unwrap();
+        Err(err) => {
 
-    conn.execute(
-        "
-        INSERT INTO orders (
-            id,
-            valor_brl,
-            valor_xlm,
-            memo,
-            tx_hash,
-            status
-        )
-        VALUES (?1, ?2, ?3, ?4, ?5, ?6)
-        ",
-        params![
-            order.id,
-            order.valor_brl.to_string(),
-            order.valor_xlm.to_string(),
-            order.memo,
-            order.tx_hash,
-            order.status
-        ],
-    )
-    .unwrap();
-
-    HttpResponse::Ok().json(order)
+            HttpResponse::InternalServerError()
+                .body(
+                    err.to_string()
+                )
+        }
+    }
 }
 
-// ========================================
-// LIST ORDERS
-// ========================================
-
-async fn list_orders(
+async fn get_charge_handler(
     data: web::Data<AppState>,
+    path: web::Path<String>,
 ) -> impl Responder {
 
-    let conn = data.db.lock().unwrap();
+    let memo =
+        path.into_inner();
 
-    let mut stmt = conn
-        .prepare(
-            "
-            SELECT
-                id,
-                valor_brl,
-                valor_xlm,
-                memo,
-                tx_hash,
-                status
-            FROM orders
-            ",
-        )
-        .unwrap();
+    let conn =
+        data.db.lock().unwrap();
 
-    let rows = stmt
-        .query_map([], |row| {
+    match get_charge_by_memo(
+        &conn,
+        &memo,
+    ) {
 
-            let memo: String = row.get(3)?;
+        Ok(charge) => {
 
-            let valor_brl: Decimal =
-                row
-                    .get::<_, String>(1)?
-                    .parse::<Decimal>()
-                    .unwrap();
+            HttpResponse::Ok()
+                .json(charge)
+        }
 
-            let valor_xlm: Decimal =
-                row
-                    .get::<_, String>(2)?
-                    .parse::<Decimal>()
-                    .unwrap();
+        Err(_) => {
 
-            Ok(Order {
-
-                id: row.get(0)?,
-
-                valor_brl,
-
-                valor_xlm,
-
-                memo: memo.clone(),
-
-                tx_hash: row.get(4)?,
-
-                status: row.get(5)?,
-
-                payment_uri: format!(
-                    "stellar:{}?amount={}&memo={}&memo_type=hash",
-                    "GB4TW32HFZEQMTS67U33D6GD36ZHTMEPAVFOIEPWXWY5QYFQDE3PC7QT",
-                    valor_xlm,
-                    memo
-                ),
-            })
-        })
-        .unwrap();
-
-    let mut orders = Vec::new();
-
-    for order in rows {
-
-        orders.push(order.unwrap());
+            HttpResponse::NotFound()
+                .body("charge not found")
+        }
     }
-
-    HttpResponse::Ok().json(orders)
 }
 
-// ========================================
-// LOAD CURSOR
-// ========================================
+async fn confirm_payment_handler(
+    body: web::Json<ConfirmPaymentRequest>,
+) -> impl Responder {
 
-fn load_cursor(
-    db: &web::Data<AppState>,
-) -> String {
+    let conn =
+        match Connection::open(
+            "slippay.db"
+        ) {
 
-    let conn = db.db.lock().unwrap();
-
-    conn.execute(
-        "
-        CREATE TABLE IF NOT EXISTS listener_state (
-            id INTEGER PRIMARY KEY,
-            paging_token TEXT
-        )
-        ",
-        [],
-    )
-    .unwrap();
-
-    let result: Result<String, _> =
-        conn.query_row(
-            "
-            SELECT paging_token
-            FROM listener_state
-            WHERE id = 1
-            ",
-            [],
-            |row| row.get(0),
-        );
-
-    result.unwrap_or("now".to_string())
-}
-
-// ========================================
-// SAVE CURSOR
-// ========================================
-
-fn save_cursor(
-    db: &web::Data<AppState>,
-    cursor: &str,
-) {
-
-    let conn = db.db.lock().unwrap();
-
-    conn.execute(
-        "
-        INSERT OR REPLACE INTO listener_state (
-            id,
-            paging_token
-        )
-        VALUES (1, ?1)
-        ",
-        params![cursor],
-    )
-    .unwrap();
-}
-
-// ========================================
-// STELLAR LISTENER
-// ========================================
-
-async fn stellar_listener(
-    db: web::Data<AppState>,
-) {
-
-    let account =
-        "GB4TW32HFZEQMTS67U33D6GD36ZHTMEPAVFOIEPWXWY5QYFQDE3PC7QT";
-
-    let client = reqwest::Client::new();
-
-    let mut cursor = load_cursor(&db);
-
-    loop {
-
-        println!("🔎 Escutando TESTNET...");
-
-        let url = format!(
-            "https://horizon-testnet.stellar.org/accounts/{}/transactions?cursor={}&limit=10&order=asc",
-            account,
-            cursor
-        );
-
-        match client.get(&url).send().await {
-
-            Ok(response) => {
-
-                match response
-                    .json::<serde_json::Value>()
-                    .await
-                {
-
-                    Ok(json) => {
-
-                        if let Some(records) =
-                            json["_embedded"]["records"]
-                                .as_array()
-                        {
-
-                            for tx in records {
-
-                                if let Some(paging_token) =
-                                    tx["paging_token"]
-                                        .as_str()
-                                {
-
-                                    cursor =
-                                        paging_token.to_string();
-
-                                    save_cursor(
-                                        &db,
-                                        &cursor,
-                                    );
-                                }
-
-                                let memo_base64 =
-                                    tx["memo"]
-                                        .as_str()
-                                        .unwrap_or("");
-
-                                if memo_base64.is_empty() {
-
-                                    continue;
-                                }
-
-                                let memo_hex =
-                                    match general_purpose::STANDARD
-                                        .decode(memo_base64)
-                                    {
-
-                                        Ok(bytes) => {
-                                            hex::encode(bytes)
-                                        }
-
-                                        Err(_) => continue,
-                                    };
-
-                                println!(
-                                    "💰 Memo detectado: {}",
-                                    memo_hex
-                                );
-
-                                let tx_hash =
-                                    tx["hash"]
-                                        .as_str()
-                                        .unwrap_or("");
-
-                                let conn =
-                                    db.db.lock().unwrap();
-
-                                let updated =
-                                    conn.execute(
-                                        "
-                                        UPDATE orders
-                                        SET
-                                            status = 'confirmed',
-                                            tx_hash = ?1
-                                        WHERE memo = ?2
-                                        ",
-                                        params![
-                                            tx_hash,
-                                            memo_hex
-                                        ],
-                                    )
-                                    .unwrap();
-
-                                if updated > 0 {
-
-                                    println!(
-                                        "✅ Pedido confirmado!"
-                                    );
-
-                                    println!(
-                                        "🔗 TX HASH: {}",
-                                        tx_hash
-                                    );
-                                }
-                            }
-                        }
-                    }
-
-                    Err(err) => {
-
-                        println!(
-                            "❌ JSON error: {:?}",
-                            err
-                        );
-                    }
-                }
-            }
+            Ok(c) => c,
 
             Err(err) => {
 
-                println!(
-                    "❌ Horizon error: {:?}",
-                    err
-                );
+                return HttpResponse::InternalServerError()
+                    .body(
+                        err.to_string()
+                    );
             }
+        };
+
+    let result =
+        reconciler::reconcile_payment(
+            &conn,
+            &body.tx_hash,
+        ).await;
+
+    match result {
+
+        Ok(response) => {
+
+            HttpResponse::Ok()
+                .json(response)
         }
 
-        sleep(Duration::from_secs(5)).await;
+        Err(err) => {
+
+            HttpResponse::BadRequest()
+                .body(err)
+        }
     }
 }
-
-// ========================================
-// MAIN
-// ========================================
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
 
-    println!("🚀 SlipPay iniciado");
+    println!(
+        "================================"
+    );
+
+    println!(
+        " SlipPay API Starting"
+    );
+
+    println!(
+        "================================"
+    );
 
     let conn =
-        Connection::open("slippay.db").unwrap();
-
-    conn.execute(
-        "
-        CREATE TABLE IF NOT EXISTS orders (
-            id TEXT PRIMARY KEY,
-            valor_brl TEXT NOT NULL,
-            valor_xlm TEXT NOT NULL,
-            memo TEXT NOT NULL,
-            tx_hash TEXT,
-            status TEXT NOT NULL
+        Connection::open(
+            "slippay.db"
         )
-        ",
-        [],
-    )
-    .unwrap();
+        .expect("failed db");
 
-    let data = web::Data::new(AppState {
-        db: Mutex::new(conn),
+    spawn(async {
+
+        listener::start_listener().await;
+
     });
 
-    // ========================================
-    // START LISTENER
-    // ========================================
-
-    let listener_data = data.clone();
-
-    tokio::spawn(async move {
-
-        stellar_listener(listener_data).await;
-    });
-
-    // ========================================
-    // START SERVER
-    // ========================================
+    let state =
+        web::Data::new(
+            AppState {
+                db: Mutex::new(conn),
+            }
+        );
 
     HttpServer::new(move || {
 
         App::new()
 
-            .app_data(data.clone())
-
-            // API ROUTES FIRST
-
-            .route("/", web::get().to(home))
-
-            .route(
-                "/orders",
-                web::post().to(create_order),
+            .app_data(
+                state.clone()
             )
 
             .route(
-                "/orders",
-                web::get().to(list_orders),
+                "/health",
+                web::get().to(health),
             )
 
-            // STATIC FILES LAST
+            .route(
+                "/create-charge",
+                web::post()
+                    .to(
+                        create_charge_handler
+                    ),
+            )
 
-            .service(
-                Files::new("/", "./")
-                    .index_file("index.html")
+            .route(
+                "/charge/{memo}",
+                web::get()
+                    .to(
+                        get_charge_handler
+                    ),
+            )
+
+            .route(
+                "/confirm-payment",
+                web::post()
+                    .to(
+                        confirm_payment_handler
+                    ),
             )
     })
 
-.bind(("127.0.0.1", 8081))?
+    .bind((
+        "0.0.0.0",
+        8081,
+    ))?
 
     .run()
 
