@@ -1,19 +1,18 @@
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Serialize, Deserialize)]
-pub struct Payment {
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct Charge {
     pub id: String,
     pub memo: String,
-    pub amount_brl: f64,
-    pub amount_xlm: f64,
-    pub destination: String,
-    pub tx_hash: Option<String>,
+    pub amount: String,
+    pub asset: String,
     pub status: String,
     pub created_at: String,
-    pub confirmed_at: Option<String>,
+    pub tx_hash: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct CreatePaymentRequest {
-    pub amount_brl: f64,
+pub struct CreateChargeRequest {
+    pub amount: String,
+    pub asset: String,
 }

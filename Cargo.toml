@@ -5,33 +5,27 @@ edition = "2021"
 
 [dependencies]
 
-# WEB SERVER
-actix-web = "4"
-
-# SERIALIZAÇÃO
-serde = { version = "1", features = ["derive"] }
-serde_json = "1"
-
-# DATABASE
-rusqlite = { version = "0.32", features = ["bundled"] }
-
-# HTTP CLIENT
-reqwest = { version = "0.12", features = ["json"] }
-
-# UUID
-uuid = { version = "1", features = ["v4", "serde"] }
-
-# DECIMAL MONEY SAFE
-rust_decimal = { version = "1", features = ["serde"] }
-rust_decimal_macros = "1"
-
-# STELLAR
-stellar_sdk = "0.1.4"
-
-# ASYNC
 tokio = { version = "1", features = ["full"] }
 
-# CRYPTO / WEBHOOK SIGNATURE
+axum = "0.7"
+
+reqwest = { version = "0.12", features = ["json"] }
+
+serde = { version = "1", features = ["derive"] }
+
+serde_json = "1"
+
+sqlx = { version = "0.7", features = [
+    "sqlite",
+    "runtime-tokio-rustls"
+] }
+
 hmac = "0.12"
+
 sha2 = "0.10"
+
 hex = "0.4"
+
+chrono = "0.4"
+
+uuid = { version = "1", features = ["v4"] }

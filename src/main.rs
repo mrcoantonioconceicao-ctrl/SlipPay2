@@ -1,280 +1,79 @@
-mod stellar;
-mod reconciler;
+mod api;
 mod db;
-mod webhook;
 mod listener;
+mod models;
+mod reconciler;
+mod stellar;
+mod webhook;
 
-use actix_web::{
-    web,
-    App,
-    HttpResponse,
-    HttpServer,
-    Responder,
+use axum::{
+    routing::{get, post},
+    Router,
 };
 
-use rusqlite::Connection;
+use std::net::SocketAddr;
 
-use serde::{Deserialize, Serialize};
+#[tokio::main]
+async fn main() {
 
-use std::sync::Mutex;
+    // ── INIT DB ──────────────────────────────────────────
+    let db = db::init_db().await;
 
-use uuid::Uuid;
+    // ── CONFIG ───────────────────────────────────────────
+    let horizon_url =
+        "https://horizon-testnet.stellar.org".to_string();
 
-use rust_decimal::Decimal;
-
-use rust_decimal_macros::dec;
-
-use tokio::spawn;
-
-use db::{
-    Charge,
-    create_charge,
-    get_charge_by_memo,
-};
-
-#[derive(Deserialize)]
-struct CreateChargeRequest {
-
-    brl_amount: Decimal,
-}
-
-#[derive(Serialize)]
-struct CreateChargeResponse {
-
-    id: String,
-
-    memo: String,
-
-    xlm_amount: Decimal,
-
-    status: String,
-}
-
-#[derive(Deserialize)]
-struct ConfirmPaymentRequest {
-
-    tx_hash: String,
-}
-
-struct AppState {
-
-    db: Mutex<Connection>,
-}
-
-async fn health() -> impl Responder {
-
-    HttpResponse::Ok().body("ok")
-}
-
-async fn create_charge_handler(
-    data: web::Data<AppState>,
-    body: web::Json<CreateChargeRequest>,
-) -> impl Responder {
-
-    let conn =
-        data.db.lock().unwrap();
-
-    let id =
-        Uuid::new_v4().to_string();
-
-    let memo =
-        Uuid::new_v4()
-            .simple()
+    let public_key =
+        "GB4TW32HFZEQMTS67U33D6GD36ZHTMEPAVFOIEPWXWY5QYFQDE3PC7QT"
             .to_string();
 
-    let rate =
-        dec!(5.0);
+    // ── START LISTENER ───────────────────────────────────
+    let db_listener = db.clone();
 
-    let xlm_amount =
-        body.brl_amount / rate;
-
-    match create_charge(
-        &conn,
-        body.brl_amount,
-        &memo,
-        &id,
-    ) {
-
-        Ok(_) => {
-
-            let response =
-                CreateChargeResponse {
-
-                    id,
-
-                    memo,
-
-                    xlm_amount,
-
-                    status:
-                        "pending".to_string(),
-                };
-
-            HttpResponse::Ok().json(
-                response
-            )
-        }
-
-        Err(err) => {
-
-            HttpResponse::InternalServerError()
-                .body(
-                    err.to_string()
-                )
-        }
-    }
-}
-
-async fn get_charge_handler(
-    data: web::Data<AppState>,
-    path: web::Path<String>,
-) -> impl Responder {
-
-    let memo =
-        path.into_inner();
-
-    let conn =
-        data.db.lock().unwrap();
-
-    match get_charge_by_memo(
-        &conn,
-        &memo,
-    ) {
-
-        Ok(charge) => {
-
-            HttpResponse::Ok()
-                .json(charge)
-        }
-
-        Err(_) => {
-
-            HttpResponse::NotFound()
-                .body("charge not found")
-        }
-    }
-}
-
-async fn confirm_payment_handler(
-    body: web::Json<ConfirmPaymentRequest>,
-) -> impl Responder {
-
-    let conn =
-        match Connection::open(
-            "slippay.db"
-        ) {
-
-            Ok(c) => c,
-
-            Err(err) => {
-
-                return HttpResponse::InternalServerError()
-                    .body(
-                        err.to_string()
-                    );
-            }
-        };
-
-    let result =
-        reconciler::reconcile_payment(
-            &conn,
-            &body.tx_hash,
-        ).await;
-
-    match result {
-
-        Ok(response) => {
-
-            HttpResponse::Ok()
-                .json(response)
-        }
-
-        Err(err) => {
-
-            HttpResponse::BadRequest()
-                .body(err)
-        }
-    }
-}
-
-#[actix_web::main]
-async fn main() -> std::io::Result<()> {
-
-    println!(
-        "================================"
-    );
-
-    println!(
-        " SlipPay API Starting"
-    );
-
-    println!(
-        "================================"
-    );
-
-    let conn =
-        Connection::open(
-            "slippay.db"
+    tokio::spawn(async move {
+        stellar::start_listener(
+            db_listener,
+            horizon_url,
+            public_key,
         )
-        .expect("failed db");
-
-    spawn(async {
-
-        listener::start_listener().await;
-
+        .await;
     });
 
-    let state =
-        web::Data::new(
-            AppState {
-                db: Mutex::new(conn),
-            }
-        );
+    // ── ROUTES ───────────────────────────────────────────
+    let app = Router::new()
+        // Health
+        .route("/", get(api::root))
 
-    HttpServer::new(move || {
+        // Payments (recebidos pelo listener)
+        .route("/payments",          get(api::list_payments))
+        .route("/payments/:tx_hash", get(api::get_payment))
 
-        App::new()
+        // Charges (cobranças criadas via API)
+        .route("/charges",     get(api::list_charges))
+        .route("/charges",     post(api::create_charge))
+        .route("/charges/:id", get(api::get_charge))
 
-            .app_data(
-                state.clone()
-            )
+        // Compartilha o pool com todos os handlers
+        .with_state(db);
 
-            .route(
-                "/health",
-                web::get().to(health),
-            )
+    // ── SERVER ───────────────────────────────────────────
+    let addr = SocketAddr::from(([0, 0, 0, 0], 8081));
 
-            .route(
-                "/create-charge",
-                web::post()
-                    .to(
-                        create_charge_handler
-                    ),
-            )
+    println!("🚀 SlipPay iniciado na porta 8081");
+    println!("📡 Endpoints disponíveis:");
+    println!("   GET  /payments");
+    println!("   GET  /payments/:tx_hash");
+    println!("   GET  /charges");
+    println!("   POST /charges");
+    println!("   GET  /charges/:id");
 
-            .route(
-                "/charge/{memo}",
-                web::get()
-                    .to(
-                        get_charge_handler
-                    ),
-            )
+    let listener =
+        tokio::net::TcpListener::bind(addr)
+            .await
+            .unwrap();
 
-            .route(
-                "/confirm-payment",
-                web::post()
-                    .to(
-                        confirm_payment_handler
-                    ),
-            )
-    })
-
-    .bind((
-        "0.0.0.0",
-        8081,
-    ))?
-
-    .run()
-
-    .await
+    axum::serve(listener, app)
+        .await
+        .unwrap();
 }
+
