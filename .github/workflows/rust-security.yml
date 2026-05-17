@@ -1,0 +1,27 @@
+name: Rust Security
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  security:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout código
+      uses: actions/checkout@v3
+
+    - name: Instalar Rust
+      uses: actions-rs/toolchain@v1
+      with:
+        toolchain: stable
+        override: true
+
+    - name: Cargo Audit (vulnerabilidades)
+      run: cargo install cargo-audit && cargo audit
+
+    - name: Cargo Clippy (lint)
+      run: cargo clippy -- -D warnings
