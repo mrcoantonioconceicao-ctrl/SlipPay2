@@ -1,0 +1,1 @@
+/data/data/com.termux/files/home/slippay-rust/crates/ast-engine/target/debug/libast_engine.rlib: /data/data/com.termux/files/home/slippay-rust/crates/ast-engine/src/lib.rs /data/data/com.termux/files/home/slippay-rust/crates/ast-engine/src/parser.rs

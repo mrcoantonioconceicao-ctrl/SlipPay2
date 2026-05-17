@@ -1,19 +1,15 @@
 use ast_engine::parser;
 
 fn main() {
-    let exemplos = vec![
-        "1 + 2 * 3",
-        "(10 + 5) * (3 - 1) / 5",
-        "3.5 * 2.1 + 1.4",
-        "((2.5 + 7.5) / 2) * 4",
-        "1 + * 2", // inválido
-    ];
+    // Testando parse_rule
+    let rule = parser::parse_rule("ALLOW country == BR");
+    println!("Rule: {:?}", rule);
 
-    for expr in exemplos {
-        println!("\nExpressão: {}", expr);
-        match parser::parse_expression(expr) {
-            Ok(resultado) => println!("Resultado: {}", resultado),
-            Err(erro) => println!("Erro ao avaliar: {:?}", erro),
-        }
-    }
+    // Testando eval
+    let mut vars = std::collections::HashMap::new();
+    vars.insert("valor".to_string(), 200.0);
+    vars.insert("taxa".to_string(), 1.5);
+
+    let result = parser::eval("valor * 0.02 + taxa", &vars).unwrap();
+    println!("Eval result: {}", result);
 }

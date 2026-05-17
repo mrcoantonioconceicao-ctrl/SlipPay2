@@ -1,0 +1,10 @@
+/data/data/com.termux/files/home/slippay-rust/crates/ast-engine/target/debug/deps/meval-0fedb7306f6a4c19.d: /data/data/com.termux/files/home/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/meval-0.2.0/src/lib.rs /data/data/com.termux/files/home/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/meval-0.2.0/src/expr.rs /data/data/com.termux/files/home/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/meval-0.2.0/src/shunting_yard.rs /data/data/com.termux/files/home/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/meval-0.2.0/src/tokenizer.rs
+
+/data/data/com.termux/files/home/slippay-rust/crates/ast-engine/target/debug/deps/libmeval-0fedb7306f6a4c19.rlib: /data/data/com.termux/files/home/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/meval-0.2.0/src/lib.rs /data/data/com.termux/files/home/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/meval-0.2.0/src/expr.rs /data/data/com.termux/files/home/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/meval-0.2.0/src/shunting_yard.rs /data/data/com.termux/files/home/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/meval-0.2.0/src/tokenizer.rs
+
+/data/data/com.termux/files/home/slippay-rust/crates/ast-engine/target/debug/deps/libmeval-0fedb7306f6a4c19.rmeta: /data/data/com.termux/files/home/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/meval-0.2.0/src/lib.rs /data/data/com.termux/files/home/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/meval-0.2.0/src/expr.rs /data/data/com.termux/files/home/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/meval-0.2.0/src/shunting_yard.rs /data/data/com.termux/files/home/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/meval-0.2.0/src/tokenizer.rs
+
+/data/data/com.termux/files/home/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/meval-0.2.0/src/lib.rs:
+/data/data/com.termux/files/home/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/meval-0.2.0/src/expr.rs:
+/data/data/com.termux/files/home/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/meval-0.2.0/src/shunting_yard.rs:
+/data/data/com.termux/files/home/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/meval-0.2.0/src/tokenizer.rs:

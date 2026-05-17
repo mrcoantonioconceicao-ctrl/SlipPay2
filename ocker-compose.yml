@@ -1,0 +1,38 @@
+version: "3.9"
+
+services:
+  slippay:
+    build: .
+    container_name: slippay
+    ports:
+      - "8080:8080"
+    depends_on:
+      - postgres
+      - redis
+    environment:
+      DATABASE_URL: postgres://slippay:slippay@postgres:5432/slippaydb
+      REDIS_URL: redis://redis:6379
+    restart: always
+
+  postgres:
+    image: postgres:15
+    container_name: slippay-postgres
+    environment:
+      POSTGRES_USER: slippay
+      POSTGRES_PASSWORD: slippay
+      POSTGRES_DB: slippaydb
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: always
+
+  redis:
+    image: redis:7
+    container_name: slippay-redis
+    ports:
+      - "6379:6379"
+    restart: always
+
+volumes:
+  postgres_data:

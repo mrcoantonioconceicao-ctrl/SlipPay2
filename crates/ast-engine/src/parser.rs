@@ -1,62 +1,63 @@
-#[derive(Debug)]
-pub enum ParseError {
-    UnexpectedChar(char),
-    UnexpectedEnd,
-    InvalidNumber,
+use crate::ast::*;
+use std::collections::HashMap;
+
+/// Parser simples de regras
+pub fn parse_rule(input: &str) -> Rule {
+    let action = if input.starts_with("ALLOW") {
+        Action::Allow
+    } else {
+        Action::Deny
+    };
+
+    Rule {
+        action,
+        expressions: vec![
+            Expression {
+                field: "country".into(),
+                operator: Operator::Eq,
+                value: "BR".into(),
+            }
+        ],
+    }
 }
 
-pub fn parse_expression(input: &str) -> Result<f64, ParseError> {
-    let tokens: Vec<char> = input.chars().filter(|c| !c.is_whitespace()).collect();
-    let mut i = 0;
-
-    fn parse_term(tokens: &[char], i: &mut usize) -> Result<f64, ParseError> {
-        let mut value = parse_factor(tokens, i)?;
-        while *i < tokens.len() {
-            match tokens[*i] {
-                '*' => { *i += 1; value *= parse_factor(tokens, i)?; }
-                '/' => { *i += 1; value /= parse_factor(tokens, i)?; }
-                _ => break,
-            }
-        }
-        Ok(value)
+/// Avaliação de expressão matemática básica com variáveis
+pub fn eval(expr: &str, vars: &HashMap<String, f64>) -> Result<f64, String> {
+    let mut replaced = expr.to_string();
+    for (k, v) in vars {
+        replaced = replaced.replace(k, &v.to_string());
     }
 
-    fn parse_expr(tokens: &[char], i: &mut usize) -> Result<f64, ParseError> {
-        let mut value = parse_term(tokens, i)?;
-        while *i < tokens.len() {
-            match tokens[*i] {
-                '+' => { *i += 1; value += parse_term(tokens, i)?; }
-                '-' => { *i += 1; value -= parse_term(tokens, i)?; }
-                _ => break,
-            }
-        }
-        Ok(value)
+    meval::eval_str(&replaced)
+        .map_err(|e| format!("Erro ao avaliar expressão: {}", e))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::collections::HashMap;
+
+    #[test]
+    fn test_eval_simple_expression() {
+        let mut vars = HashMap::new();
+        vars.insert("valor".to_string(), 200.0);
+        vars.insert("taxa".to_string(), 1.5);
+
+        let result = eval("valor * 0.02 + taxa", &vars).unwrap();
+        assert_eq!(result, 5.5);
     }
 
-    fn parse_factor(tokens: &[char], i: &mut usize) -> Result<f64, ParseError> {
-        if *i >= tokens.len() {
-            return Err(ParseError::UnexpectedEnd);
-        }
-
-        if tokens[*i] == '(' {
-            *i += 1;
-            let val = parse_expr(tokens, i)?;
-            if *i >= tokens.len() || tokens[*i] != ')' {
-                return Err(ParseError::UnexpectedChar(')'));
-            }
-            *i += 1;
-            Ok(val)
-        } else if tokens[*i].is_ascii_digit() {
-            let mut num = String::new();
-            while *i < tokens.len() && (tokens[*i].is_ascii_digit() || tokens[*i] == '.') {
-                num.push(tokens[*i]);
-                *i += 1;
-            }
-            num.parse::<f64>().map_err(|_| ParseError::InvalidNumber)
-        } else {
-            Err(ParseError::UnexpectedChar(tokens[*i]))
-        }
+    #[test]
+    fn test_parse_rule_allow() {
+        let rule = parse_rule("ALLOW country == BR");
+        assert!(matches!(rule.action, Action::Allow));
+        assert_eq!(rule.expressions[0].field, "country");
+        assert_eq!(rule.expressions[0].value, "BR");
     }
 
-    parse_expr(&tokens, &mut i)
+    #[test]
+    fn test_parse_rule_deny() {
+        let rule = parse_rule("DENY country == BR");
+        assert!(matches!(rule.action, Action::Deny));
+    }
 }

@@ -1,177 +1,257 @@
-use serde::Deserialize;
-use sqlx::SqlitePool;
+use reqwest;
+use serde_json::Value;
+use tokio::time::{sleep, Duration};
 
-#[derive(Debug, Deserialize)]
-pub struct HorizonResponse {
-    pub _embedded: Embedded,
-}
+pub async fn monitor_payments(wallet: &str) {
 
-#[derive(Debug, Deserialize)]
-pub struct Embedded {
-    pub records: Vec<PaymentRecord>,
-}
-
-#[derive(Debug, Deserialize)]
-pub struct PaymentRecord {
-
-    pub paging_token: Option<String>,
-
-    pub transaction_hash: Option<String>,
-
-    pub amount: Option<String>,
-
-    pub asset_type: Option<String>,
-
-    pub from: Option<String>,
-
-    pub to: Option<String>,
-
-    pub created_at: Option<String>,
-
-    #[serde(rename = "type")]
-    pub operation_type: Option<String>,
-}
-
-pub async fn start_listener(
-    db: SqlitePool,
-    horizon_url: String,
-    public_key: String,
-) {
+    println!("🚀 Monitor Stellar iniciado");
 
     let client = reqwest::Client::new();
 
-    let mut cursor = "now".to_string();
+    // cursor persistente
+    let mut cursor = String::from("now");
 
     loop {
 
+        println!("🧠 CURSOR ATUAL: {}", cursor);
+
         let url = format!(
-            "{}/accounts/{}/payments?cursor={}&limit=10&order=asc",
-            horizon_url,
-            public_key,
+            "https://horizon-testnet.stellar.org/accounts/{}/operations?cursor={}&limit=10&order=asc",
+            wallet,
             cursor
         );
 
         println!("🔍 Consultando Horizon...");
         println!("🌐 URL: {}", url);
 
-        let response = client
-            .get(&url)
-            .send()
-            .await;
+        match client.get(&url).send().await {
 
-        match response {
+            Ok(response) => {
 
-            Ok(resp) => {
+                match response.text().await {
 
-                let text = resp.text().await.unwrap();
+                    Ok(text) => {
 
-                println!("📦 Horizon RAW: {}", text);
+                        println!("📦 Horizon RAW: {}", text);
 
-                let parsed: Result<HorizonResponse, _> =
-                    serde_json::from_str(&text);
+                        let parsed: Result<Value, _> =
+                            serde_json::from_str(&text);
 
-                match parsed {
+                        match parsed {
 
-                    Ok(data) => {
+                            Ok(json) => {
 
-                        println!(
-                            "✅ {} pagamentos encontrados",
-                            data._embedded.records.len()
-                        );
+                                let records =
+                                    json["_embedded"]["records"]
+                                        .as_array()
+                                        .unwrap_or(&vec![])
+                                        .to_vec();
 
-                        for payment in data._embedded.records {
+                                println!(
+                                    "✅ {} operações encontradas",
+                                    records.len()
+                                );
 
-                            println!(
-                                "📦 TX: {}",
-                                payment.transaction_hash
-                                    .clone()
-                                    .unwrap_or_default()
-                            );
+                                for record in records {
 
-                            println!(
-                                "💰 Valor: {} {}",
-                                payment.amount
-                                    .clone()
-                                    .unwrap_or_default(),
-                                payment.asset_type
-                                    .clone()
-                                    .unwrap_or_default()
-                            );
+                                    // salva cursor NOVO
+                                    if let Some(token) =
+                                        record["paging_token"]
+                                            .as_str()
+                                    {
+                                        println!(
+                                            "💾 NOVO CURSOR: {}",
+                                            token
+                                        );
 
-                            let tx_hash =
-                                payment.transaction_hash
-                                    .clone()
-                                    .unwrap_or_default();
+                                        cursor =
+                                            token.to_string();
+                                    }
 
-                            let exists =
-                                sqlx::query(
-                                    "SELECT tx_hash FROM payments WHERE tx_hash = ?"
-                                )
-                                .bind(&tx_hash)
-                                .fetch_optional(&db)
-                                .await
-                                .unwrap();
+                                    let op_type =
+                                        record["type"]
+                                            .as_str()
+                                            .unwrap_or("");
 
-                            if exists.is_none() {
+                                    // filtra apenas payments
+                                    if op_type != "payment" {
+                                        continue;
+                                    }
 
-                                sqlx::query(
-                                    r#"
-                                    INSERT INTO payments (
-                                        tx_hash,
-                                        amount,
-                                        asset_type,
-                                        sender,
-                                        receiver,
-                                        created_at
-                                    )
-                                    VALUES (?, ?, ?, ?, ?, ?)
-                                    "#
-                                )
-                                .bind(&tx_hash)
-                                .bind(
-                                    payment.amount.unwrap_or_default()
-                                )
-                                .bind(
-                                    payment.asset_type.unwrap_or_default()
-                                )
-                                .bind(
-                                    payment.from.unwrap_or_default()
-                                )
-                                .bind(
-                                    payment.to.unwrap_or_default()
-                                )
-                                .bind(
-                                    payment.created_at.unwrap_or_default()
-                                )
-                                .execute(&db)
-                                .await
-                                .unwrap();
+                                    println!(
+                                        "💸 PAGAMENTO DETECTADO"
+                                    );
 
-                                println!("✅ reconciliado");
+                                    println!(
+                                        "🧾 HASH: {}",
+                                        record["transaction_hash"]
+                                            .as_str()
+                                            .unwrap_or("")
+                                    );
+
+                                    println!(
+                                        "💰 VALOR: {}",
+                                        record["amount"]
+                                            .as_str()
+                                            .unwrap_or("")
+                                    );
+
+                                    println!(
+                                        "📤 FROM: {}",
+                                        record["from"]
+                                            .as_str()
+                                            .unwrap_or("")
+                                    );
+
+                                    println!(
+                                        "📥 TO: {}",
+                                        record["to"]
+                                            .as_str()
+                                            .unwrap_or("")
+                                    );
+
+                                    // busca memo/hash da tx
+                                    if let Some(tx_hash) =
+                                        record["transaction_hash"]
+                                            .as_str()
+                                    {
+                                        fetch_transaction(
+                                            &client,
+                                            tx_hash
+                                        ).await;
+                                    }
+
+                                    println!(
+                                        "────────────────────────"
+                                    );
+                                }
                             }
 
-                            if let Some(token) =
-                                payment.paging_token {
-
-                                cursor = token;
+                            Err(err) => {
+                                println!(
+                                    "❌ Erro parse JSON: {}",
+                                    err
+                                );
                             }
                         }
                     }
 
                     Err(err) => {
-                        println!("❌ parse error: {}", err);
+                        println!(
+                            "❌ Erro lendo body: {}",
+                            err
+                        );
                     }
                 }
             }
 
             Err(err) => {
-                println!("❌ request error: {}", err);
+                println!(
+                    "❌ Erro HTTP: {}",
+                    err
+                );
             }
         }
 
-        tokio::time::sleep(
-            tokio::time::Duration::from_secs(5)
-        )
-        .await;
+        sleep(Duration::from_secs(5)).await;
+    }
+}
+
+async fn fetch_transaction(
+    client: &reqwest::Client,
+    tx_hash: &str,
+) {
+
+    let url = format!(
+        "https://horizon-testnet.stellar.org/transactions/{}",
+        tx_hash
+    );
+
+    println!("🔎 Buscando TX...");
+    println!("🌐 TX URL: {}", url);
+
+    match client.get(&url).send().await {
+
+        Ok(response) => {
+
+            match response.text().await {
+
+                Ok(text) => {
+
+                    let parsed: Result<Value, _> =
+                        serde_json::from_str(&text);
+
+                    match parsed {
+
+                        Ok(json) => {
+
+                            println!(
+                                "✅ TX SUCCESS: {}",
+                                json["successful"]
+                            );
+
+                            println!(
+                                "🧠 MEMO TYPE: {}",
+                                json["memo_type"]
+                                    .as_str()
+                                    .unwrap_or("")
+                            );
+
+                            let memo_base64 =
+                                json["memo"]
+                                    .as_str()
+                                    .unwrap_or("");
+
+                            println!(
+                                "📝 MEMO BASE64: {}",
+                                memo_base64
+                            );
+
+                            match base64::decode(memo_base64) {
+
+                                Ok(bytes) => {
+
+                                    let memo_hex =
+                                        hex::encode(bytes);
+
+                                    println!(
+                                        "🔐 MEMO HEX: {}",
+                                        memo_hex
+                                    );
+                                }
+
+                                Err(err) => {
+                                    println!(
+                                        "❌ Erro convertendo memo: {}",
+                                        err
+                                    );
+                                }
+                            }
+                        }
+
+                        Err(err) => {
+                            println!(
+                                "❌ Erro parse TX JSON: {}",
+                                err
+                            );
+                        }
+                    }
+                }
+
+                Err(err) => {
+                    println!(
+                        "❌ Erro lendo TX: {}",
+                        err
+                    );
+                }
+            }
+        }
+
+        Err(err) => {
+            println!(
+                "❌ Erro HTTP TX: {}",
+                err
+            );
+        }
     }
 }
