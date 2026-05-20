@@ -1,0 +1,24 @@
+[package]
+name = "pq-security"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+
+[dependencies]
+# Herdando dependências seguras da raiz do Workspace
+serde = { workspace = true, features = ["derive"] }
+serde_json = { workspace = true }
+thiserror = { workspace = true }
+tracing = { workspace = true }
+anyhow = { workspace = true }
+ed25519-dalek = { workspace = true, features = ["serde"] }
+
+# Motores criptográficos pós-quânticos locais
+pqcrypto-traits = { workspace = true }
+pqcrypto-kyber = { workspace = true }
+pqcrypto-dilithium = { workspace = true }
+
+# Necessário para geração segura de entropia na criação de chaves (Wallet)
+rand = "0.8.5"
+

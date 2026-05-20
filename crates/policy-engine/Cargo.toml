@@ -1,15 +1,16 @@
 [package]
-name = "ast-engine"
+name = "policy-engine"
 version.workspace = true
 edition.workspace = true
 authors.workspace = true
 license.workspace = true
 
 [dependencies]
-# Herdando as dependências seguras do arquivo raiz
+# Dependências herdadas da raiz
 serde = { workspace = true, features = ["derive"] }
-serde_json = { workspace = true }
 thiserror = { workspace = true }
 tracing = { workspace = true }
-meval = { workspace = true } # Ativando o uso da meval nesta crate específica
+
+# Dependência INTERNA do seu próprio Workspace
+ast-engine = { path = "../ast-engine" }
 

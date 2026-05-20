@@ -1,4 +1,9 @@
 pub mod ast;
 pub mod parser;
+pub mod evaluator;
 
-pub use parser::{parse_rule, eval};
+/// Função de diagnóstico para expor o status de prontidão do motor lógico.
+pub fn info() {
+    println!("AST-Engine: Motor lógico determinístico carregado e operacional.");
+}
+
