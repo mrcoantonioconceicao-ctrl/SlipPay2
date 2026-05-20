@@ -1,0 +1,15 @@
+[package]
+name = "solana-engine"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license = "MIT"
+
+[dependencies]
+serde = { workspace = true, features = ["derive"] }
+anyhow = { workspace = true }
+rust_decimal = { workspace = true }
+bs58 = "0.5.0"
+# 💡 Linkando o thiserror do workspace para habilitar erros contextualizados
+thiserror = { workspace = true }
+

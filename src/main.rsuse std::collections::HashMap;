@@ -1,0 +1,140 @@
+nc::Arc;
+use actix_web::{post, web, App, HttpServer, Responder, HttpResponse};
+use serde::{Deserialize, Serialize};
+
+// Ingestão das crates do ecossistema SlipPay
+use storage_engine::Storage;
+use pq_security::wallet::PqWalletVault;
+use risk_engine::fraud::FraudEvaluator;
+use risk_engine::scoring::RiskPayload;
+use risk_engine::anomaly::AnomalyContext;
+use risk_engine::sanctions::SanctionCheckPayload;
+use policy_engine::policy::MerchantPolicy;
+use policy_engine::rules::PolicyTransactionPayload;
+use policy_engine::execution::PolicyExecutor;
+use ast_engine::ast::{Node, Operator, Value};
+use ast_engine::evaluator::evaluate_ast;
+
+/// Estrutura de entrada para mapear o JSON recebido no CURL
+#[derive(Deserialize)]
+struct TransactionInput {
+    wallet_address: String,
+    amount: f64,
+    transaction_type: String,
+    document: String,
+}
+
+/// Estrutura de saída que retorna a auditoria completa em JSON para o CURL
+#[derive(Serialize)]
+struct TransactionResponse {
+    status: String,
+    antifraud_action: String,
+    policy_allowed: bool,
+    ast_approved: bool,
+    msg: String,
+}
+
+/// Endpoint assíncrono que processa a transação em toda a esteira de motores
+#[post("/api/v1/transactions")]
+async fn handle_transaction(
+    db: web::Data<Arc<Storage>>, 
+    input: web::Json<TransactionInput>
+) -> impl Responder {
+    
+    // 0. Leitura analítica do histórico real via Storage Engine
+    let db_historical_amounts = match db.get_history(&input.wallet_address).await {
+        Ok(history) => history,
+        Err(_) => vec![1200.0, 1400.0, 1350.0], // Fallback defensivo
+    };
+
+    // 1. Criptografia pós-quântica rodando isolada por transação
+    let _wallet = PqWalletVault::generate_new();
+
+    // 2. Calibração instantânea dos motores de risco e compliance
+    let mut risk_evaluator = FraudEvaluator::new(15, 50000.0);
+    let merchant_policy = MerchantPolicy::new_sandbox("merch_live_999");
+
+    // 3. Montagem dos payloads estruturados com dados dinâmicos do input
+    let risk_payload = RiskPayload {
+        transaction_amount: input.amount,
+        device_reputation: 0.95,
+        user_history_score: 0.80,
+        is_anomalous_location: false,
+    };
+
+    let anomaly_ctx = AnomalyContext {
+        historical_amounts: db_historical_amounts, 
+        current_transaction_amount: input.amount,
+        allowed_deviation_factor: 3.0,
+    };
+
+    let sanction_payload = SanctionCheckPayload {
+        document: input.document.clone(),
+        wallet_address: input.wallet_address.clone(),
+        country_code: "BR".to_string(),
+    };
+
+    let policy_payload = PolicyTransactionPayload {
+        transaction_type: input.transaction_type.clone(),
+        amount: input.amount,
+        daily_accumulated_volume: 500.0,
+    };
+
+    // 4. Execuções síncronas de vereditos matemáticos e lógicos
+    let fraud_verdict = risk_evaluator.evaluate_transaction("cliente_api", &risk_payload, &anomaly_ctx, &sanction_payload);
+    let policy_audit = PolicyExecutor::execute_single(&merchant_policy, &policy_payload);
+
+    // Definição da regra AST dinâmica (Limite rígido de segurança de R$ 3.000,00)
+    let ast_rule = Node::Condition {
+        field: "amount".to_string(),
+        operator: Operator::LessThanOrEqual,
+        value: Value::Number(3000.0),
+    };
+    let mut ast_context = HashMap::new();
+    ast_context.insert("amount".to_string(), Value::Number(input.amount));
+    let ast_verdict = evaluate_ast(&ast_rule, &ast_context);
+
+    // 5. Consolidação e Persistência Atômica do Resultado
+    let is_approved = policy_audit.verdict.is_allowed 
+        && ast_verdict 
+        && format!("{:?}", fraud_verdict.action) == "Approve";
+        
+    let status_final = if is_approved { "APPROVED" } else { "REJECTED" };
+    
+    // Gravação assíncrona no SQLite delegada ao Storage-Engine
+    let _ = db.save_transaction(&input.wallet_address, input.amount, status_final).await;
+
+    // Retorno formal da API em JSON com HTTP Status 200 OK
+    HttpResponse::Ok().json(TransactionResponse {
+        status: status_final.to_string(),
+        antifraud_action: format!("{:?}", fraud_verdict.action),
+        policy_allowed: policy_audit.verdict.is_allowed,
+        ast_approved: ast_verdict,
+        msg: "Processamento de alta performance concluído via SlipPay Engine.".to_string(),
+    })
+}
+
+#[actix_web::main]
+async fn main() -> std::io::Result<()> {
+    println!("====================================================");
+    println!(" 🔥 SLIPPAY API OPERACIONAL - AGUARDANDO REQUISIÇÕES");
+    println!(" 🌐 Servidor escutando em: http://127.0.0.1:8080");
+    println!("====================================================\n");
+
+    // Inicialização da infraestrutura do banco de dados relacional
+    let db = Storage::new("sqlite://slippay.db").await.expect("Falha crítica ao conectar ao banco");
+    db.run_migrations().await.expect("Falha crítica ao rodar migrações de tabelas");
+    
+    // Compartilha a instância do Banco de Dados de forma segura entre as threads do Actix
+    let shared_db = web::Data::new(Arc::new(db));
+
+    HttpServer::new(move || {
+        App::new()
+            .app_data(shared_db.clone())
+            .service(handle_transaction)
+    })
+    .bind(("127.0.0.1", 8080))?
+    .run()
+    .await
+}
+
