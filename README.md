@@ -1,11 +1,46 @@
-​SlipPay Core — Solana Anti-Fraud & Payment API
-​O SlipPay nasceu como um gateway de pagamentos de alta performance desenvolvido integralmente em Rust. Inicialmente desenhado para ser uma solução agnóstica de mercado, o ecossistema foi agora totalmente calibrado para operar como uma infraestrutura crítica para a rede Solana. O nosso objetivo é validar transações em tempo real com precisão monetária absoluta, aplicando segurança criptográfica de ponta e flexibilidade lógica.
-​Este projeto é o nosso entregável para o Hackathon Solana x Stellar. Como nossa equipe dividiu as frentes de trabalho,   enquanto eu foquei em consolidar o SlipPay Rust para o ecossistema da Solana, aproveitando a baixa latência e a eficiência de custos da rede.
-​A arquitetura do SlipPay é pautada nos princípios de Clean Architecture. O sistema é organizado em módulos independentes, chamados de crates, dentro de um único workspace em Rust. Essa separação garante que o domínio de negócio, o banco de dados e as validações criptográficas não se misturem. Temos módulos específicos para processamento de árvores lógicas, gestão de políticas de compliance, análise antifraude, segurança pós-quântica, persistência de dados e a integração direta com a Solana.
-​Um dos nossos grandes diferenciais é a validação nativa da Web3. Em vez de utilizar SDKs genéricos e pesados que poderiam gerar conflitos de dependência no binário, desenvolvemos um motor de validação baseado em Base58 puro. Isso permite verificar chaves públicas e assinaturas digitais com uma velocidade incrível, validando a integridade matemática antes mesmo de qualquer débito ser processado.
-​Outro ponto de atenção é a precisão monetária. Muitos gateways falham ao usar tipos numéricos de ponto flutuante que causam erros de arredondamento. No SlipPay, utilizamos tipos decimais de alta precisão, salvando todos os valores como texto no banco de dados para evitar qualquer perda de centavos. Aliado a isso, criamos um motor de regras dinâmicas que permite ao lojista definir condições lógicas complexas e aninhadas que são resolvidas em microsegundos pela nossa árvore de sintaxe.
-​Para garantir que a integração seja impecável, focamos em diagnósticos de erros contextualizados. Inspirados pelas melhores APIs globais, o SlipPay não retorna mensagens genéricas de falha. Se um desenvolvedor enviar um dado incorreto, ele receberá uma resposta estruturada que explica exatamente o que está errado, indicando o código do erro e o contexto da falha. Isso agiliza muito o trabalho de quem integra o nosso gateway.
-​O projeto utiliza Rust em sua versão mais recente, com o framework Actix-Web para lidar com requisições assíncronas e multithreading nativo. Para o banco de dados, escolhemos o SQLite pela sua portabilidade extrema, permitindo que o SlipPay rode desde servidores robustos até dispositivos móveis, sempre com uma camada de segurança que utiliza as melhores bibliotecas de criptografia e tipagem do ecossistema Rust.
-​Quanto ao uso, o SlipPay possui dois caminhos principais. O primeiro é a criação e avaliação de transações, onde enviamos a chave pública, a assinatura, o valor, o tipo de operação e as regras de negócio. Se tudo estiver correto, o sistema retorna a aprovação com a taxa da rede calculada em Lamports. O segundo caminho é o painel de auditoria, onde é possível consultar o histórico completo de transações processadas, sempre ordenado do mais recente para o mais antigo, facilitando auditorias e investigações de fraude.
-​Para rodar o projeto, a simplicidade é a chave. Como todo o ambiente é gerenciado pelo Cargo, basta acessar a pasta raiz do projeto e rodar o comando de execução. O sistema se encarrega de compilar todas as partes, preparar o banco de dados e subir o servidor pronto para receber conexões.
-​Este projeto está licenciado sob o MIT, reforçando nosso compromisso com o código aberto e a evolução da arquitetura. Desenvolvemos o SlipPay com muita dedicação para este Hackathon, acreditando que a modularidade e a performance que construímos aqui podem ser uma base muito sólida para futuras soluções de pagamento na Web3.
+# solana_sandbox_counter (Solana Anchor Smart Contract)
+
+Este repositório contém o código-fonte do Smart Contract em Rust/Anchor e o SDK cliente TypeScript, exportados diretamente do **Solana Architect IDE**.
+
+## 🛡️ Relatório de Auditoria de Segurança AST
+- **Score de Segurança Auditoria:** `95/100`
+- **Program ID:** `Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS`
+- **Framework:** Anchor v0.30.0
+- **Rede Solana Alvo:** Localnet / Devnet / Mainnet-Beta
+
+## 📁 Estrutura do Repositório
+```text
+.
+├── Anchor.toml
+├── Cargo.toml
+├── README.md
+├── client/
+│   └── index.ts                 # SDK Cliente TypeScript para Interação
+├── target/
+│   └── idl/
+│       └── solana_sandbox_counter.json   # IDL Anchor Gerado
+└── programs/
+    └── solana_sandbox_counter/
+        ├── Cargo.toml
+        └── src/
+            └── lib.rs           # Smart Contract Rust Principal
+```
+
+## 🚀 Como Compilar e Testar Localmente
+
+1. Certifique-se de ter o **Solana CLI** e o **Anchor v0.30** instalados.
+2. Instale as dependências TypeScript:
+   ```bash
+   yarn install
+   ```
+3. Compile o programa Anchor:
+   ```bash
+   anchor build
+   ```
+4. Execute os testes em ambiente localnet:
+   ```bash
+   anchor test
+   ```
+
+---
+*Gerado via **Solana Architect** - Ambiente de Auditoria AST e Sandbox Solana.*
