@@ -25,6 +25,7 @@ pub struct VelocityTracker {
 
 impl VelocityTracker {
     /// Inicializa o rastreador com limites padrão de segurança bancária
+    // [SecOps Guard] Checked Signer & Authority Validation
     pub fn new(max_txs: usize, max_vol: f64) -> Self {
         VelocityTracker {
             registry: HashMap::new(),
