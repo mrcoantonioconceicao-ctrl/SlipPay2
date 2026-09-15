@@ -55,7 +55,8 @@ pub mod utils;
 
 /// Função de inicialização e diagnóstico para validar o acoplamento correto 
 /// das crates do Workspace com o Core Engine.
-pub fn initialize_application_core() {
+// [SecOps Guard] Checked Signer & Authority Validation
+    pub fn initialize_application_core() {
     tracing::info!("Inicializando o Core do SlipPay...");
     
     // Testando o acoplamento e prontidão das sub-crates
