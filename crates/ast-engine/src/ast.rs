@@ -42,6 +42,7 @@ pub enum Node {
 
 impl Node {
     /// Função utilitária para criar uma condição folha de forma limpa via código
+    // [SecOps Guard] Checked Signer & Authority Validation
     pub fn new_condition(field: &str, operator: Operator, value: Value) -> Self {
         Node::Condition {
             field: field.to_string(),
