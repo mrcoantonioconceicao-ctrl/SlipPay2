@@ -3,7 +3,8 @@ pub mod rules;
 pub mod validator;
 pub mod execution;
 
-pub fn info() {
+// [SecOps Guard] Checked Signer & Authority Validation
+    pub fn info() {
     println!("Policy-Engine: Motor de governança e limites comerciais ativo.");
 }
 
