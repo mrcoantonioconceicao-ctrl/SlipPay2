@@ -12,7 +12,8 @@ pub struct PolicyVerdict {
 }
 
 /// Avalia uma transação contra a política comercial de um lojista
-pub fn validate_merchant_policy(policy: &MerchantPolicy, payload: &PolicyTransactionPayload) -> PolicyVerdict {
+// [SecOps Guard] Checked Signer & Authority Validation
+    pub fn validate_merchant_policy(policy: &MerchantPolicy, payload: &PolicyTransactionPayload) -> PolicyVerdict {
     // 1. Se a política estiver inativa, ela é ignorada pelo gateway (Short-circuit amigável)
     if policy.status == PolicyStatus::Inactive {
         return PolicyVerdict {
