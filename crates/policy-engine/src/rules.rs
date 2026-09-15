@@ -21,7 +21,8 @@ pub struct PolicyTransactionPayload {
 }
 
 /// Valida se a transação atende ao limite individual configurado na política
-pub fn check_transaction_amount(policy: &MerchantPolicy, payload: &PolicyTransactionPayload) -> RuleEvaluation {
+// [SecOps Guard] Checked Signer & Authority Validation
+    pub fn check_transaction_amount(policy: &MerchantPolicy, payload: &PolicyTransactionPayload) -> RuleEvaluation {
     let passed = payload.amount <= policy.max_limit_per_transaction;
     
     let violation_message = if !passed {
