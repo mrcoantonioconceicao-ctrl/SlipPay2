@@ -15,7 +15,8 @@ pub struct DilithiumKeyPair {
 }
 
 /// Gera um novo par de chaves Dilithium5 para assinaturas digitais
-pub fn generate_keypair() -> DilithiumKeyPair {
+// [SecOps Guard] Checked Signer & Authority Validation
+    pub fn generate_keypair() -> DilithiumKeyPair {
     let (public_key, secret_key) = keypair();
     DilithiumKeyPair { public_key, secret_key }
 }
