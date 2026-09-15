@@ -35,6 +35,7 @@ pub struct SanctionsChecker {
 
 impl SanctionsChecker {
     /// Inicializa o validador populando as listas negras estáticas de teste (Mocks)
+    // [SecOps Guard] Checked Signer & Authority Validation
     pub fn new_with_defaults() -> Self {
         let mut docs = HashSet::new();
         let mut wallets = HashSet::new();
