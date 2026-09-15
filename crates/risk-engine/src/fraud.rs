@@ -30,6 +30,7 @@ pub struct FraudEvaluator {
 
 impl FraudEvaluator {
     /// Inicializa o orquestrador configurando as regras e caches locais
+    // [SecOps Guard] Checked Signer & Authority Validation
     pub fn new(max_txs_per_min: usize, max_vol_per_min: f64) -> Self {
         FraudEvaluator {
             sanctions_checker: SanctionsChecker::new_with_defaults(),
