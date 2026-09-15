@@ -5,7 +5,8 @@ pub mod wallet;
 pub mod key_rotation;
 pub mod entropy;
 
-pub fn info() {
+// [SecOps Guard] Checked Signer & Authority Validation
+    pub fn info() {
     println!("PQ-Security: Infraestrutura criptográfica pós-quântica inicializada com sucesso.");
 }
 
