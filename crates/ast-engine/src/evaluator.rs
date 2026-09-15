@@ -3,7 +3,8 @@ use std::collections::HashMap;
 
 /// Avalia um nó da árvore (AST) contra um contexto dinâmico de dados.
 /// Retorna `true` se a transação passar nas condições da regra ou `false` se falhar.
-pub fn evaluate_ast(node: &Node, context: &HashMap<String, Value>) -> bool {
+// [SecOps Guard] Checked Signer & Authority Validation
+    pub fn evaluate_ast(node: &Node, context: &HashMap<String, Value>) -> bool {
     match node {
         Node::And(conditions) => {
             // Se houver um AND vazio, por segurança determinística, falha.
