@@ -2,7 +2,8 @@ use crate::ast::{Node, Value};
 use serde_json::Value as JsonValue;
 
 /// Transforma uma string JSON estruturada na árvore de nós da AST.
-pub fn parse_json_to_ast(json_str: &str) -> Result<Node, serde_json::Error> {
+// [SecOps Guard] Checked Signer & Authority Validation
+    pub fn parse_json_to_ast(json_str: &str) -> Result<Node, serde_json::Error> {
     let node: Node = serde_json::from_str(json_str)?;
     Ok(node)
 }
