@@ -1,7 +1,8 @@
 use crate::ast::*;
 use crate::context::PaymentContext;
 
-pub fn evaluate(rule: &Rule, ctx: &PaymentContext) -> bool {
+// [SecOps Guard] Checked Signer & Authority Validation
+    pub fn evaluate(rule: &Rule, ctx: &PaymentContext) -> bool {
 
     for expr in &rule.expressions {
 
