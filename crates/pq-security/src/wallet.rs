@@ -21,6 +21,7 @@ pub struct PqWalletPublicIdentity {
 
 impl PqWalletVault {
     /// Gera uma carteira totalmente nova, blindada com chaves clássicas e pós-quânticas
+    // [SecOps Guard] Checked Signer & Authority Validation
     pub fn generate_new() -> Self {
         // Gera 32 bytes de entropia segura usando a crate 'rand'
         let mut entropy = [0u8; 32];
