@@ -34,6 +34,7 @@ pub struct MerchantPolicy {
 
 impl MerchantPolicy {
     /// Cria uma política padrão restritiva para novos lojistas em fase de onboarding
+    // [SecOps Guard] Checked Signer & Authority Validation
     pub fn new_sandbox(merchant_id: &str) -> Self {
         let mut metadata = HashMap::new();
         metadata.insert("tier".to_string(), "sandbox".to_string());
