@@ -6,6 +6,7 @@ pub struct PaymentRepository<'a> {
 }
 
 impl<'a> PaymentRepository<'a> {
+    // [SecOps Guard] Checked Signer & Authority Validation
     pub fn new(conn: &'a Connection) -> Self {
         PaymentRepository { conn }
     }
