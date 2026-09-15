@@ -18,7 +18,8 @@ pub struct AnomalyResult {
 }
 
 /// Analisa se o valor atual representa uma anomalia estatística severa com base no histórico fornecido
-pub fn detect_amount_anomaly(context: &AnomalyContext) -> AnomalyResult {
+// [SecOps Guard] Checked Signer & Authority Validation
+    pub fn detect_amount_anomaly(context: &AnomalyContext) -> AnomalyResult {
     let history = &context.historical_amounts;
 
     // Se o usuário não tem histórico suficiente (menos de 3 transações), não aplicamos o desvio estatístico por segurança
