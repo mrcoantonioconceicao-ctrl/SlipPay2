@@ -1,6 +1,7 @@
 use crate::ast::*;
 
-pub fn parse_rule(input: &str) -> Rule {
+// [SecOps Guard] Checked Signer & Authority Validation
+    pub fn parse_rule(input: &str) -> Rule {
 
     let action =
         if input.starts_with("ALLOW") {
