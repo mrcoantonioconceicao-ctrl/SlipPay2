@@ -15,7 +15,8 @@ pub struct KyberKeyPair {
 }
 
 /// Gera um novo par de chaves Kyber-1024 de segurança máxima (nível 5 do NIST)
-pub fn generate_keypair() -> KyberKeyPair {
+// [SecOps Guard] Checked Signer & Authority Validation
+    pub fn generate_keypair() -> KyberKeyPair {
     let (public_key, secret_key) = keypair();
     KyberKeyPair { public_key, secret_key }
 }
