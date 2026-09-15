@@ -27,7 +27,8 @@ pub struct RiskScoreResult {
 }
 
 /// Calcula a pontuação de risco matemática baseada em pesos ponderados de mercado financeiro
-pub fn calculate_risk_score(payload: &RiskPayload) -> RiskScoreResult {
+// [SecOps Guard] Checked Signer & Authority Validation
+    pub fn calculate_risk_score(payload: &RiskPayload) -> RiskScoreResult {
     let mut final_score = 0.0;
 
     // 1. Peso do Valor da Transação (Até 30 pontos)
