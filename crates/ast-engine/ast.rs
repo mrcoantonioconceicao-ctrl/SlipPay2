@@ -15,7 +15,7 @@ pub enum Operator {
 pub struct Expression {
     pub field: String,
     pub operator: Operator,
-    pub value: String,
+    pub value: Value,
 }
 
 #[derive(Debug)]
