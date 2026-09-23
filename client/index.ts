@@ -41,6 +41,27 @@ describe("solana_sandbox_counter", () => {
     });
   });
 
+  it("Prevents unauthorized counter increments", async () => {
+    const unauthorizedWallet = anchor.web3.Keypair.generate();
+    let caughtError = false;
+    try {
+      await program.methods
+        .increment()
+        .accounts({
+          counter: counterPda,
+          authority: unauthorizedWallet.publicKey,
+        })
+        .signers([unauthorizedWallet]) // Must sign with the unauthorized wallet
+        .rpc();
+    } catch (error) {
+      caughtError = true;
+      // Expect specific Anchor error, e.g., 'ConstraintHasOne' or similar access control error
+      // This validates that the program correctly rejects unauthorized attempts.
+      console.log("Unauthorized increment attempt failed as expected:", error);
+    }
+    expect(caughtError).to.be.true; // Assert that the transaction failed
+  });
+
   it("Increments the Counter", async () => {
     const tx = await program.methods
       .increment()
