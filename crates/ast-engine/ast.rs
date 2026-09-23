@@ -13,7 +13,7 @@ pub enum Operator {
 
 #[derive(Debug)]
 pub struct Expression {
-    pub field: String,
+    pub field: ValidatedFieldName,
     pub operator: Operator,
     pub value: Value,
 }
