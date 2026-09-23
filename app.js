@@ -387,6 +387,31 @@ function mostrarTxHash(txHash) {
 
         <p style="
             word-break: break-all;
+        "></p>
+
+        <a
+            href="
+https://stellar.expert/explorer/testnet/tx/${encodeURIComponent(txHash)}
+"
+            target="_blank"
+
+            style="
+                color:#38bdf8;
+                text-decoration:none;
+                font-weight:bold;
+            "
+        >
+            Ver na Stellar Expert
+        </a>
+    `;
+    txElement.querySelector('p').innerText = txHash;
+
+        <h3>
+            🔗 Transação Confirmada
+        </h3>
+
+        <p style="
+            word-break: break-all;
         ">
             ${txHash}
         </p>
