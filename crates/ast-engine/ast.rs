@@ -15,7 +15,7 @@ pub enum Operator {
 pub struct Expression {
     pub field: ValidatedFieldName,
     pub operator: Operator,
-    pub value: SafeValue,
+    pub value: SafeValue, // IMPORTANT: A implementação subjacente de 'SafeValue' DEVE validar, sanitizar e codificar estritamente as entradas para prevenir vulnerabilidades de injeção (OWASP A03).
 }
 
 #[derive(Debug)]
