@@ -3,5 +3,5 @@ pub struct PaymentContext {
     pub amount: u64, // Consider a dedicated decimal type or integer for smallest unit
     pub country: String,
     pub asset: String,
-    pub risk_score: f32,
+    pub risk_score: rust_decimal::Decimal,
 }
