@@ -23,7 +23,15 @@ use crate::context::PaymentContext;
             "amount" => {
 
                 let val: f64 =
-                    expr.value.parse().unwrap();
+                    match expr.value.parse() {
+                        Ok(v) => v,
+                        Err(_) => {
+                            // Log an error if needed, e.g., using `log::warn!`
+                            // log::warn!("Invalid amount value in rule expression: '{}'", expr.value);
+                            // If the rule's value is invalid, it cannot match, so return false.
+                            return false;
+                        }
+                    };
 
                 match expr.operator {
 
