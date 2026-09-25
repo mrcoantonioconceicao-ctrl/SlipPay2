@@ -244,7 +244,7 @@ function iniciarMonitoramento() {
 
                 const response =
                     await fetch(
-                        `${API_URL}/orders`
+                        `${API_URL}/orders/${currentOrderId}`
                     );
 
                 const orders =
