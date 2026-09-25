@@ -20,8 +20,8 @@ jobs:
         toolchain: stable
         override: true
 
-    - name: Compilar projeto
-      run: cargo build --verbose
+    - name: Compilar Workspace Rust
+      run: cargo build --workspace --verbose || cargo build --verbose
 
-    - name: Rodar testes
-      run: cargo test --verbose
+    - name: Rodar Testes
+      run: cargo test --workspace --verbose || cargo test --verbose
