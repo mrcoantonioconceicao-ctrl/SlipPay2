@@ -15,7 +15,7 @@ pub enum Operator {
 pub struct Expression {
     pub field: ValidatedFieldName,
     pub operator: Operator,
-    pub value: Value,
+    pub value: SafeValue,
 }
 
 #[derive(Debug)]
