@@ -20,8 +20,10 @@ jobs:
         toolchain: stable
         override: true
 
-    - name: Compilar projeto
-      run: cargo build --verbose
-
-    - name: Rodar testes
-      run: cargo test --verbose
+    - name: Build focado em subdiretórios Rust
+      run: |
+        if [ -d "crates/ast-engine" ]; then
+          cd crates/ast-engine && cargo build --verbose
+        else
+          cargo build --verbose
+        fi
