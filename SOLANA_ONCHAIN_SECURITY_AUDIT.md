@@ -1,265 +1,432 @@
 # 🛡️ Relatório Oficial de Auditoria de Segurança On-Chain (Solana / Anchor)
 
 **Arquitetura:** Graph Enterprise & Solana DevSecOps Agent
-**Repositório:** SlipPay2
-**Data de Execução:** 2026-10-15T22:53:24.861Z
+**Repositório Analisado:** SlipPay2
+**Data de Execução:** 2026-10-15T23:05:36.349Z
 
-## 📋 Escopo da Análise Estática
-Ficheiros .rs escaneados no ecossistema Anchor:
-- `crates/ast-engine/ast.rs`
-- `crates/ast-engine/context.rs`
-- `crates/ast-engine/evaluator.rs`
-- `crates/ast-engine/examples/test.rs`
-- `crates/ast-engine/lib.rs`
-- `crates/ast-engine/parser.rs`
-- `crates/ast-engine/src/ast.rs`
-- `crates/ast-engine/src/context.rs`
-- `crates/ast-engine/src/evaluator.rs`
-- `crates/ast-engine/src/lib.rs`
-- `crates/ast-engine/src/parser.rs`
-- `crates/policy-engine/src/execution.rs`
-- `crates/policy-engine/src/lib.rs`
-- `crates/policy-engine/src/policy.rs`
-- `crates/policy-engine/src/rules.rs`
-- `crates/policy-engine/src/validator.rs`
-- `crates/pq-security/src/dilithium.rs`
-- `crates/pq-security/src/entropy.rs`
-- `crates/pq-security/src/hybrid.rs`
-- `crates/pq-security/src/key_rotation.rs`
-- `crates/pq-security/src/kyber.rs`
-- `crates/pq-security/src/lib.rs`
-- `crates/pq-security/src/wallet.rs`
-- `crates/risk-engine/src/anomaly.rs`
-- `crates/risk-engine/src/fraud.rs`
-- `crates/risk-engine/src/lib.rs`
-- `crates/risk-engine/src/sanctions.rs`
-- `crates/risk-engine/src/scoring.rs`
-- `crates/risk-engine/src/velocity.rs`
-- `crates/solana-engine/src/lib.rs`
-- `crates/storage-engine/src/lib.rs`
-- `programs/solana_sandbox_counter/src/lib.rs`
-- `src/adapters/database/mod.rs`
-- `src/adapters/external/mod.rs`
-- `src/adapters/mod.rs`
-- `src/adapters/stellar/mod.rs`
-- `src/config/mod.rs`
-- `src/domain/invoice/mod.rs`
-- `src/domain/merchant/mod.rs`
-- `src/domain/payment/mod.rs`
-- `src/domain/settlement/mod.rs`
-- `src/dto/mod.rs`
-- `src/errors/mod.rs`
-- `src/interfaces/api/mod.rs`
-- `src/interfaces/mod.rs`
-- `src/interfaces/webhook/mod.rs`
-- `src/lib.rs`
-- `src/main.rs`
-- `src/models.rs`
-- `src/observability/mod.rs`
-- `src/repositories/mod.rs`
-- `src/routes/orders.rs`
-- `src/routes.rs`
-- `src/services/api.rs`
-- `src/services/db.rs`
-- `src/services/ingestion/mod.rs`
-- `src/services/listener.rs`
-- `src/services/mod.rs`
-- `src/services/orchestration/mod.rs`
-- `src/services/reconciler.rs`
-- `src/services/reconciliation/mod.rs`
-- `src/services/repository/charge_repository.rs`
-- `src/services/repository/mod.rs`
-- `src/services/repository/payment_repository.rs`
-- `src/services/security/mod.rs`
-- `src/utils/mod.rs`
-- `src/utils/stellar.rs`
-- `src/webhook.rs`
-- `tests/integration.rs`
+## 📋 Escopo da Análise Estática e Metodologia
+O presente relatório documenta a proveniência, o escopo e os resultados detalhados da análise estática aplicada aos contratos inteligentes e bibliotecas Rust em conformidade com as taxonomias de segurança:
+- **CWE-862:** Missing Authorization / Verificação de Signatários e Autoridade em Contas Anchor (#[derive(Accounts)]).
+- **CWE-190:** Integer Overflow / Underflow em Operações Aritméticas On-Chain.
 
-## 🔍 Diagnóstico de Vulnerabilidades e Vetores Solana
+## 🔍 Resultados Detalhados por Ficheiro
 
-### 1. [MEDIUM] CWE-190: Integer Overflow / Underflow Risk
-- **Ficheiro:** `crates/ast-engine/evaluator.rs`
-- **Descrição:** Uso de operações aritméticas diretas sem métodos checked_* ou saturating_* em crates/ast-engine/evaluator.rs.
-- **Remediação Recomendada:** Substituir operações aritméticas nativas por .checked_add(), .checked_sub(), ou garantir ativação de overflow-checks no Cargo.toml.
+### 1. `crates/ast-engine/ast.rs`
+- **Contém Structs Anchor (`#[derive(Accounts)]`):** Não
+- **Status CWE-862 (Autoridade / Signer):** Pass (Validado / Sem structs Anchor críticas)
+- **Status CWE-190 (Aritmética Segura):** Pass (Sem operações aritméticas críticas ou uso de checked)
 
-### 2. [MEDIUM] CWE-190: Integer Overflow / Underflow Risk
-- **Ficheiro:** `crates/ast-engine/examples/test.rs`
-- **Descrição:** Uso de operações aritméticas diretas sem métodos checked_* ou saturating_* em crates/ast-engine/examples/test.rs.
-- **Remediação Recomendada:** Substituir operações aritméticas nativas por .checked_add(), .checked_sub(), ou garantir ativação de overflow-checks no Cargo.toml.
+### 2. `crates/ast-engine/context.rs`
+- **Contém Structs Anchor (`#[derive(Accounts)]`):** Não
+- **Status CWE-862 (Autoridade / Signer):** Pass (Validado / Sem structs Anchor críticas)
+- **Status CWE-190 (Aritmética Segura):** Pass (Sem operações aritméticas críticas ou uso de checked)
 
-### 3. [MEDIUM] CWE-190: Integer Overflow / Underflow Risk
-- **Ficheiro:** `crates/ast-engine/parser.rs`
-- **Descrição:** Uso de operações aritméticas diretas sem métodos checked_* ou saturating_* em crates/ast-engine/parser.rs.
-- **Remediação Recomendada:** Substituir operações aritméticas nativas por .checked_add(), .checked_sub(), ou garantir ativação de overflow-checks no Cargo.toml.
+### 3. `crates/ast-engine/evaluator.rs`
+- **Contém Structs Anchor (`#[derive(Accounts)]`):** Não
+- **Status CWE-862 (Autoridade / Signer):** Pass (Validado / Sem structs Anchor críticas)
+- **Status CWE-190 (Aritmética Segura):** Warning / Review Required (Operações aritméticas sem checked_* detetadas)
+- **Observações / Achados:**
+  - CWE-190: Operações aritméticas nativas sem métodos checked_* ou saturating_*.
 
-### 4. [MEDIUM] CWE-190: Integer Overflow / Underflow Risk
-- **Ficheiro:** `crates/ast-engine/src/ast.rs`
-- **Descrição:** Uso de operações aritméticas diretas sem métodos checked_* ou saturating_* em crates/ast-engine/src/ast.rs.
-- **Remediação Recomendada:** Substituir operações aritméticas nativas por .checked_add(), .checked_sub(), ou garantir ativação de overflow-checks no Cargo.toml.
+### 4. `crates/ast-engine/examples/test.rs`
+- **Contém Structs Anchor (`#[derive(Accounts)]`):** Não
+- **Status CWE-862 (Autoridade / Signer):** Pass (Validado / Sem structs Anchor críticas)
+- **Status CWE-190 (Aritmética Segura):** Warning / Review Required (Operações aritméticas sem checked_* detetadas)
+- **Observações / Achados:**
+  - CWE-190: Operações aritméticas nativas sem métodos checked_* ou saturating_*.
 
-### 5. [MEDIUM] CWE-190: Integer Overflow / Underflow Risk
-- **Ficheiro:** `crates/ast-engine/src/evaluator.rs`
-- **Descrição:** Uso de operações aritméticas diretas sem métodos checked_* ou saturating_* em crates/ast-engine/src/evaluator.rs.
-- **Remediação Recomendada:** Substituir operações aritméticas nativas por .checked_add(), .checked_sub(), ou garantir ativação de overflow-checks no Cargo.toml.
+### 5. `crates/ast-engine/lib.rs`
+- **Contém Structs Anchor (`#[derive(Accounts)]`):** Não
+- **Status CWE-862 (Autoridade / Signer):** Pass (Validado / Sem structs Anchor críticas)
+- **Status CWE-190 (Aritmética Segura):** Pass (Sem operações aritméticas críticas ou uso de checked)
 
-### 6. [MEDIUM] CWE-190: Integer Overflow / Underflow Risk
-- **Ficheiro:** `crates/ast-engine/src/lib.rs`
-- **Descrição:** Uso de operações aritméticas diretas sem métodos checked_* ou saturating_* em crates/ast-engine/src/lib.rs.
-- **Remediação Recomendada:** Substituir operações aritméticas nativas por .checked_add(), .checked_sub(), ou garantir ativação de overflow-checks no Cargo.toml.
+### 6. `crates/ast-engine/parser.rs`
+- **Contém Structs Anchor (`#[derive(Accounts)]`):** Não
+- **Status CWE-862 (Autoridade / Signer):** Pass (Validado / Sem structs Anchor críticas)
+- **Status CWE-190 (Aritmética Segura):** Warning / Review Required (Operações aritméticas sem checked_* detetadas)
+- **Observações / Achados:**
+  - CWE-190: Operações aritméticas nativas sem métodos checked_* ou saturating_*.
 
-### 7. [MEDIUM] CWE-190: Integer Overflow / Underflow Risk
-- **Ficheiro:** `crates/ast-engine/src/parser.rs`
-- **Descrição:** Uso de operações aritméticas diretas sem métodos checked_* ou saturating_* em crates/ast-engine/src/parser.rs.
-- **Remediação Recomendada:** Substituir operações aritméticas nativas por .checked_add(), .checked_sub(), ou garantir ativação de overflow-checks no Cargo.toml.
+### 7. `crates/ast-engine/src/ast.rs`
+- **Contém Structs Anchor (`#[derive(Accounts)]`):** Não
+- **Status CWE-862 (Autoridade / Signer):** Pass (Validado / Sem structs Anchor críticas)
+- **Status CWE-190 (Aritmética Segura):** Warning / Review Required (Operações aritméticas sem checked_* detetadas)
+- **Observações / Achados:**
+  - CWE-190: Operações aritméticas nativas sem métodos checked_* ou saturating_*.
 
-### 8. [MEDIUM] CWE-190: Integer Overflow / Underflow Risk
-- **Ficheiro:** `crates/policy-engine/src/execution.rs`
-- **Descrição:** Uso de operações aritméticas diretas sem métodos checked_* ou saturating_* em crates/policy-engine/src/execution.rs.
-- **Remediação Recomendada:** Substituir operações aritméticas nativas por .checked_add(), .checked_sub(), ou garantir ativação de overflow-checks no Cargo.toml.
+### 8. `crates/ast-engine/src/context.rs`
+- **Contém Structs Anchor (`#[derive(Accounts)]`):** Não
+- **Status CWE-862 (Autoridade / Signer):** Pass (Validado / Sem structs Anchor críticas)
+- **Status CWE-190 (Aritmética Segura):** Pass (Sem operações aritméticas críticas ou uso de checked)
 
-### 9. [MEDIUM] CWE-190: Integer Overflow / Underflow Risk
-- **Ficheiro:** `crates/policy-engine/src/lib.rs`
-- **Descrição:** Uso de operações aritméticas diretas sem métodos checked_* ou saturating_* em crates/policy-engine/src/lib.rs.
-- **Remediação Recomendada:** Substituir operações aritméticas nativas por .checked_add(), .checked_sub(), ou garantir ativação de overflow-checks no Cargo.toml.
+### 9. `crates/ast-engine/src/evaluator.rs`
+- **Contém Structs Anchor (`#[derive(Accounts)]`):** Não
+- **Status CWE-862 (Autoridade / Signer):** Pass (Validado / Sem structs Anchor críticas)
+- **Status CWE-190 (Aritmética Segura):** Warning / Review Required (Operações aritméticas sem checked_* detetadas)
+- **Observações / Achados:**
+  - CWE-190: Operações aritméticas nativas sem métodos checked_* ou saturating_*.
 
-### 10. [MEDIUM] CWE-190: Integer Overflow / Underflow Risk
-- **Ficheiro:** `crates/policy-engine/src/policy.rs`
-- **Descrição:** Uso de operações aritméticas diretas sem métodos checked_* ou saturating_* em crates/policy-engine/src/policy.rs.
-- **Remediação Recomendada:** Substituir operações aritméticas nativas por .checked_add(), .checked_sub(), ou garantir ativação de overflow-checks no Cargo.toml.
+### 10. `crates/ast-engine/src/lib.rs`
+- **Contém Structs Anchor (`#[derive(Accounts)]`):** Não
+- **Status CWE-862 (Autoridade / Signer):** Pass (Validado / Sem structs Anchor críticas)
+- **Status CWE-190 (Aritmética Segura):** Warning / Review Required (Operações aritméticas sem checked_* detetadas)
+- **Observações / Achados:**
+  - CWE-190: Operações aritméticas nativas sem métodos checked_* ou saturating_*.
 
-### 11. [MEDIUM] CWE-190: Integer Overflow / Underflow Risk
-- **Ficheiro:** `crates/policy-engine/src/rules.rs`
-- **Descrição:** Uso de operações aritméticas diretas sem métodos checked_* ou saturating_* em crates/policy-engine/src/rules.rs.
-- **Remediação Recomendada:** Substituir operações aritméticas nativas por .checked_add(), .checked_sub(), ou garantir ativação de overflow-checks no Cargo.toml.
+### 11. `crates/ast-engine/src/parser.rs`
+- **Contém Structs Anchor (`#[derive(Accounts)]`):** Não
+- **Status CWE-862 (Autoridade / Signer):** Pass (Validado / Sem structs Anchor críticas)
+- **Status CWE-190 (Aritmética Segura):** Warning / Review Required (Operações aritméticas sem checked_* detetadas)
+- **Observações / Achados:**
+  - CWE-190: Operações aritméticas nativas sem métodos checked_* ou saturating_*.
 
-### 12. [MEDIUM] CWE-190: Integer Overflow / Underflow Risk
-- **Ficheiro:** `crates/policy-engine/src/validator.rs`
-- **Descrição:** Uso de operações aritméticas diretas sem métodos checked_* ou saturating_* em crates/policy-engine/src/validator.rs.
-- **Remediação Recomendada:** Substituir operações aritméticas nativas por .checked_add(), .checked_sub(), ou garantir ativação de overflow-checks no Cargo.toml.
+### 12. `crates/policy-engine/src/execution.rs`
+- **Contém Structs Anchor (`#[derive(Accounts)]`):** Não
+- **Status CWE-862 (Autoridade / Signer):** Pass (Validado / Sem structs Anchor críticas)
+- **Status CWE-190 (Aritmética Segura):** Warning / Review Required (Operações aritméticas sem checked_* detetadas)
+- **Observações / Achados:**
+  - CWE-190: Operações aritméticas nativas sem métodos checked_* ou saturating_*.
 
-### 13. [MEDIUM] CWE-190: Integer Overflow / Underflow Risk
-- **Ficheiro:** `crates/pq-security/src/dilithium.rs`
-- **Descrição:** Uso de operações aritméticas diretas sem métodos checked_* ou saturating_* em crates/pq-security/src/dilithium.rs.
-- **Remediação Recomendada:** Substituir operações aritméticas nativas por .checked_add(), .checked_sub(), ou garantir ativação de overflow-checks no Cargo.toml.
+### 13. `crates/policy-engine/src/lib.rs`
+- **Contém Structs Anchor (`#[derive(Accounts)]`):** Não
+- **Status CWE-862 (Autoridade / Signer):** Pass (Validado / Sem structs Anchor críticas)
+- **Status CWE-190 (Aritmética Segura):** Warning / Review Required (Operações aritméticas sem checked_* detetadas)
+- **Observações / Achados:**
+  - CWE-190: Operações aritméticas nativas sem métodos checked_* ou saturating_*.
 
-### 14. [MEDIUM] CWE-190: Integer Overflow / Underflow Risk
-- **Ficheiro:** `crates/pq-security/src/hybrid.rs`
-- **Descrição:** Uso de operações aritméticas diretas sem métodos checked_* ou saturating_* em crates/pq-security/src/hybrid.rs.
-- **Remediação Recomendada:** Substituir operações aritméticas nativas por .checked_add(), .checked_sub(), ou garantir ativação de overflow-checks no Cargo.toml.
+### 14. `crates/policy-engine/src/policy.rs`
+- **Contém Structs Anchor (`#[derive(Accounts)]`):** Não
+- **Status CWE-862 (Autoridade / Signer):** Pass (Validado / Sem structs Anchor críticas)
+- **Status CWE-190 (Aritmética Segura):** Warning / Review Required (Operações aritméticas sem checked_* detetadas)
+- **Observações / Achados:**
+  - CWE-190: Operações aritméticas nativas sem métodos checked_* ou saturating_*.
 
-### 15. [MEDIUM] CWE-190: Integer Overflow / Underflow Risk
-- **Ficheiro:** `crates/pq-security/src/kyber.rs`
-- **Descrição:** Uso de operações aritméticas diretas sem métodos checked_* ou saturating_* em crates/pq-security/src/kyber.rs.
-- **Remediação Recomendada:** Substituir operações aritméticas nativas por .checked_add(), .checked_sub(), ou garantir ativação de overflow-checks no Cargo.toml.
+### 15. `crates/policy-engine/src/rules.rs`
+- **Contém Structs Anchor (`#[derive(Accounts)]`):** Não
+- **Status CWE-862 (Autoridade / Signer):** Pass (Validado / Sem structs Anchor críticas)
+- **Status CWE-190 (Aritmética Segura):** Warning / Review Required (Operações aritméticas sem checked_* detetadas)
+- **Observações / Achados:**
+  - CWE-190: Operações aritméticas nativas sem métodos checked_* ou saturating_*.
 
-### 16. [MEDIUM] CWE-190: Integer Overflow / Underflow Risk
-- **Ficheiro:** `crates/pq-security/src/lib.rs`
-- **Descrição:** Uso de operações aritméticas diretas sem métodos checked_* ou saturating_* em crates/pq-security/src/lib.rs.
-- **Remediação Recomendada:** Substituir operações aritméticas nativas por .checked_add(), .checked_sub(), ou garantir ativação de overflow-checks no Cargo.toml.
+### 16. `crates/policy-engine/src/validator.rs`
+- **Contém Structs Anchor (`#[derive(Accounts)]`):** Não
+- **Status CWE-862 (Autoridade / Signer):** Pass (Validado / Sem structs Anchor críticas)
+- **Status CWE-190 (Aritmética Segura):** Warning / Review Required (Operações aritméticas sem checked_* detetadas)
+- **Observações / Achados:**
+  - CWE-190: Operações aritméticas nativas sem métodos checked_* ou saturating_*.
 
-### 17. [MEDIUM] CWE-190: Integer Overflow / Underflow Risk
-- **Ficheiro:** `crates/pq-security/src/wallet.rs`
-- **Descrição:** Uso de operações aritméticas diretas sem métodos checked_* ou saturating_* em crates/pq-security/src/wallet.rs.
-- **Remediação Recomendada:** Substituir operações aritméticas nativas por .checked_add(), .checked_sub(), ou garantir ativação de overflow-checks no Cargo.toml.
+### 17. `crates/pq-security/src/dilithium.rs`
+- **Contém Structs Anchor (`#[derive(Accounts)]`):** Não
+- **Status CWE-862 (Autoridade / Signer):** Pass (Validado / Sem structs Anchor críticas)
+- **Status CWE-190 (Aritmética Segura):** Warning / Review Required (Operações aritméticas sem checked_* detetadas)
+- **Observações / Achados:**
+  - CWE-190: Operações aritméticas nativas sem métodos checked_* ou saturating_*.
 
-### 18. [MEDIUM] CWE-190: Integer Overflow / Underflow Risk
-- **Ficheiro:** `crates/risk-engine/src/anomaly.rs`
-- **Descrição:** Uso de operações aritméticas diretas sem métodos checked_* ou saturating_* em crates/risk-engine/src/anomaly.rs.
-- **Remediação Recomendada:** Substituir operações aritméticas nativas por .checked_add(), .checked_sub(), ou garantir ativação de overflow-checks no Cargo.toml.
+### 18. `crates/pq-security/src/entropy.rs`
+- **Contém Structs Anchor (`#[derive(Accounts)]`):** Não
+- **Status CWE-862 (Autoridade / Signer):** Pass (Validado / Sem structs Anchor críticas)
+- **Status CWE-190 (Aritmética Segura):** Pass (Sem operações aritméticas críticas ou uso de checked)
 
-### 19. [MEDIUM] CWE-190: Integer Overflow / Underflow Risk
-- **Ficheiro:** `crates/risk-engine/src/fraud.rs`
-- **Descrição:** Uso de operações aritméticas diretas sem métodos checked_* ou saturating_* em crates/risk-engine/src/fraud.rs.
-- **Remediação Recomendada:** Substituir operações aritméticas nativas por .checked_add(), .checked_sub(), ou garantir ativação de overflow-checks no Cargo.toml.
+### 19. `crates/pq-security/src/hybrid.rs`
+- **Contém Structs Anchor (`#[derive(Accounts)]`):** Não
+- **Status CWE-862 (Autoridade / Signer):** Pass (Validado / Sem structs Anchor críticas)
+- **Status CWE-190 (Aritmética Segura):** Warning / Review Required (Operações aritméticas sem checked_* detetadas)
+- **Observações / Achados:**
+  - CWE-190: Operações aritméticas nativas sem métodos checked_* ou saturating_*.
 
-### 20. [MEDIUM] CWE-190: Integer Overflow / Underflow Risk
-- **Ficheiro:** `crates/risk-engine/src/lib.rs`
-- **Descrição:** Uso de operações aritméticas diretas sem métodos checked_* ou saturating_* em crates/risk-engine/src/lib.rs.
-- **Remediação Recomendada:** Substituir operações aritméticas nativas por .checked_add(), .checked_sub(), ou garantir ativação de overflow-checks no Cargo.toml.
+### 20. `crates/pq-security/src/key_rotation.rs`
+- **Contém Structs Anchor (`#[derive(Accounts)]`):** Não
+- **Status CWE-862 (Autoridade / Signer):** Pass (Validado / Sem structs Anchor críticas)
+- **Status CWE-190 (Aritmética Segura):** Pass (Sem operações aritméticas críticas ou uso de checked)
 
-### 21. [MEDIUM] CWE-190: Integer Overflow / Underflow Risk
-- **Ficheiro:** `crates/risk-engine/src/sanctions.rs`
-- **Descrição:** Uso de operações aritméticas diretas sem métodos checked_* ou saturating_* em crates/risk-engine/src/sanctions.rs.
-- **Remediação Recomendada:** Substituir operações aritméticas nativas por .checked_add(), .checked_sub(), ou garantir ativação de overflow-checks no Cargo.toml.
+### 21. `crates/pq-security/src/kyber.rs`
+- **Contém Structs Anchor (`#[derive(Accounts)]`):** Não
+- **Status CWE-862 (Autoridade / Signer):** Pass (Validado / Sem structs Anchor críticas)
+- **Status CWE-190 (Aritmética Segura):** Warning / Review Required (Operações aritméticas sem checked_* detetadas)
+- **Observações / Achados:**
+  - CWE-190: Operações aritméticas nativas sem métodos checked_* ou saturating_*.
 
-### 22. [MEDIUM] CWE-190: Integer Overflow / Underflow Risk
-- **Ficheiro:** `crates/risk-engine/src/scoring.rs`
-- **Descrição:** Uso de operações aritméticas diretas sem métodos checked_* ou saturating_* em crates/risk-engine/src/scoring.rs.
-- **Remediação Recomendada:** Substituir operações aritméticas nativas por .checked_add(), .checked_sub(), ou garantir ativação de overflow-checks no Cargo.toml.
+### 22. `crates/pq-security/src/lib.rs`
+- **Contém Structs Anchor (`#[derive(Accounts)]`):** Não
+- **Status CWE-862 (Autoridade / Signer):** Pass (Validado / Sem structs Anchor críticas)
+- **Status CWE-190 (Aritmética Segura):** Warning / Review Required (Operações aritméticas sem checked_* detetadas)
+- **Observações / Achados:**
+  - CWE-190: Operações aritméticas nativas sem métodos checked_* ou saturating_*.
 
-### 23. [MEDIUM] CWE-190: Integer Overflow / Underflow Risk
-- **Ficheiro:** `crates/risk-engine/src/velocity.rs`
-- **Descrição:** Uso de operações aritméticas diretas sem métodos checked_* ou saturating_* em crates/risk-engine/src/velocity.rs.
-- **Remediação Recomendada:** Substituir operações aritméticas nativas por .checked_add(), .checked_sub(), ou garantir ativação de overflow-checks no Cargo.toml.
+### 23. `crates/pq-security/src/wallet.rs`
+- **Contém Structs Anchor (`#[derive(Accounts)]`):** Não
+- **Status CWE-862 (Autoridade / Signer):** Pass (Validado / Sem structs Anchor críticas)
+- **Status CWE-190 (Aritmética Segura):** Warning / Review Required (Operações aritméticas sem checked_* detetadas)
+- **Observações / Achados:**
+  - CWE-190: Operações aritméticas nativas sem métodos checked_* ou saturating_*.
 
-### 24. [MEDIUM] CWE-190: Integer Overflow / Underflow Risk
-- **Ficheiro:** `crates/solana-engine/src/lib.rs`
-- **Descrição:** Uso de operações aritméticas diretas sem métodos checked_* ou saturating_* em crates/solana-engine/src/lib.rs.
-- **Remediação Recomendada:** Substituir operações aritméticas nativas por .checked_add(), .checked_sub(), ou garantir ativação de overflow-checks no Cargo.toml.
+### 24. `crates/risk-engine/src/anomaly.rs`
+- **Contém Structs Anchor (`#[derive(Accounts)]`):** Não
+- **Status CWE-862 (Autoridade / Signer):** Pass (Validado / Sem structs Anchor críticas)
+- **Status CWE-190 (Aritmética Segura):** Warning / Review Required (Operações aritméticas sem checked_* detetadas)
+- **Observações / Achados:**
+  - CWE-190: Operações aritméticas nativas sem métodos checked_* ou saturating_*.
 
-### 25. [MEDIUM] CWE-190: Integer Overflow / Underflow Risk
-- **Ficheiro:** `crates/storage-engine/src/lib.rs`
-- **Descrição:** Uso de operações aritméticas diretas sem métodos checked_* ou saturating_* em crates/storage-engine/src/lib.rs.
-- **Remediação Recomendada:** Substituir operações aritméticas nativas por .checked_add(), .checked_sub(), ou garantir ativação de overflow-checks no Cargo.toml.
+### 25. `crates/risk-engine/src/fraud.rs`
+- **Contém Structs Anchor (`#[derive(Accounts)]`):** Não
+- **Status CWE-862 (Autoridade / Signer):** Pass (Validado / Sem structs Anchor críticas)
+- **Status CWE-190 (Aritmética Segura):** Warning / Review Required (Operações aritméticas sem checked_* detetadas)
+- **Observações / Achados:**
+  - CWE-190: Operações aritméticas nativas sem métodos checked_* ou saturating_*.
 
-### 26. [MEDIUM] CWE-190: Integer Overflow / Underflow Risk
-- **Ficheiro:** `programs/solana_sandbox_counter/src/lib.rs`
-- **Descrição:** Uso de operações aritméticas diretas sem métodos checked_* ou saturating_* em programs/solana_sandbox_counter/src/lib.rs.
-- **Remediação Recomendada:** Substituir operações aritméticas nativas por .checked_add(), .checked_sub(), ou garantir ativação de overflow-checks no Cargo.toml.
+### 26. `crates/risk-engine/src/lib.rs`
+- **Contém Structs Anchor (`#[derive(Accounts)]`):** Não
+- **Status CWE-862 (Autoridade / Signer):** Pass (Validado / Sem structs Anchor críticas)
+- **Status CWE-190 (Aritmética Segura):** Warning / Review Required (Operações aritméticas sem checked_* detetadas)
+- **Observações / Achados:**
+  - CWE-190: Operações aritméticas nativas sem métodos checked_* ou saturating_*.
 
-### 27. [MEDIUM] CWE-190: Integer Overflow / Underflow Risk
-- **Ficheiro:** `src/lib.rs`
-- **Descrição:** Uso de operações aritméticas diretas sem métodos checked_* ou saturating_* em src/lib.rs.
-- **Remediação Recomendada:** Substituir operações aritméticas nativas por .checked_add(), .checked_sub(), ou garantir ativação de overflow-checks no Cargo.toml.
+### 27. `crates/risk-engine/src/sanctions.rs`
+- **Contém Structs Anchor (`#[derive(Accounts)]`):** Não
+- **Status CWE-862 (Autoridade / Signer):** Pass (Validado / Sem structs Anchor críticas)
+- **Status CWE-190 (Aritmética Segura):** Warning / Review Required (Operações aritméticas sem checked_* detetadas)
+- **Observações / Achados:**
+  - CWE-190: Operações aritméticas nativas sem métodos checked_* ou saturating_*.
 
-### 28. [MEDIUM] CWE-190: Integer Overflow / Underflow Risk
-- **Ficheiro:** `src/main.rs`
-- **Descrição:** Uso de operações aritméticas diretas sem métodos checked_* ou saturating_* em src/main.rs.
-- **Remediação Recomendada:** Substituir operações aritméticas nativas por .checked_add(), .checked_sub(), ou garantir ativação de overflow-checks no Cargo.toml.
+### 28. `crates/risk-engine/src/scoring.rs`
+- **Contém Structs Anchor (`#[derive(Accounts)]`):** Não
+- **Status CWE-862 (Autoridade / Signer):** Pass (Validado / Sem structs Anchor críticas)
+- **Status CWE-190 (Aritmética Segura):** Warning / Review Required (Operações aritméticas sem checked_* detetadas)
+- **Observações / Achados:**
+  - CWE-190: Operações aritméticas nativas sem métodos checked_* ou saturating_*.
 
-### 29. [MEDIUM] CWE-190: Integer Overflow / Underflow Risk
-- **Ficheiro:** `src/routes/orders.rs`
-- **Descrição:** Uso de operações aritméticas diretas sem métodos checked_* ou saturating_* em src/routes/orders.rs.
-- **Remediação Recomendada:** Substituir operações aritméticas nativas por .checked_add(), .checked_sub(), ou garantir ativação de overflow-checks no Cargo.toml.
+### 29. `crates/risk-engine/src/velocity.rs`
+- **Contém Structs Anchor (`#[derive(Accounts)]`):** Não
+- **Status CWE-862 (Autoridade / Signer):** Pass (Validado / Sem structs Anchor críticas)
+- **Status CWE-190 (Aritmética Segura):** Warning / Review Required (Operações aritméticas sem checked_* detetadas)
+- **Observações / Achados:**
+  - CWE-190: Operações aritméticas nativas sem métodos checked_* ou saturating_*.
 
-### 30. [MEDIUM] CWE-190: Integer Overflow / Underflow Risk
-- **Ficheiro:** `src/routes.rs`
-- **Descrição:** Uso de operações aritméticas diretas sem métodos checked_* ou saturating_* em src/routes.rs.
-- **Remediação Recomendada:** Substituir operações aritméticas nativas por .checked_add(), .checked_sub(), ou garantir ativação de overflow-checks no Cargo.toml.
+### 30. `crates/solana-engine/src/lib.rs`
+- **Contém Structs Anchor (`#[derive(Accounts)]`):** Não
+- **Status CWE-862 (Autoridade / Signer):** Pass (Validado / Sem structs Anchor críticas)
+- **Status CWE-190 (Aritmética Segura):** Warning / Review Required (Operações aritméticas sem checked_* detetadas)
+- **Observações / Achados:**
+  - CWE-190: Operações aritméticas nativas sem métodos checked_* ou saturating_*.
 
-### 31. [MEDIUM] CWE-190: Integer Overflow / Underflow Risk
-- **Ficheiro:** `src/services/api.rs`
-- **Descrição:** Uso de operações aritméticas diretas sem métodos checked_* ou saturating_* em src/services/api.rs.
-- **Remediação Recomendada:** Substituir operações aritméticas nativas por .checked_add(), .checked_sub(), ou garantir ativação de overflow-checks no Cargo.toml.
+### 31. `crates/storage-engine/src/lib.rs`
+- **Contém Structs Anchor (`#[derive(Accounts)]`):** Não
+- **Status CWE-862 (Autoridade / Signer):** Pass (Validado / Sem structs Anchor críticas)
+- **Status CWE-190 (Aritmética Segura):** Warning / Review Required (Operações aritméticas sem checked_* detetadas)
+- **Observações / Achados:**
+  - CWE-190: Operações aritméticas nativas sem métodos checked_* ou saturating_*.
 
-### 32. [MEDIUM] CWE-190: Integer Overflow / Underflow Risk
-- **Ficheiro:** `src/services/db.rs`
-- **Descrição:** Uso de operações aritméticas diretas sem métodos checked_* ou saturating_* em src/services/db.rs.
-- **Remediação Recomendada:** Substituir operações aritméticas nativas por .checked_add(), .checked_sub(), ou garantir ativação de overflow-checks no Cargo.toml.
+### 32. `programs/solana_sandbox_counter/src/lib.rs`
+- **Contém Structs Anchor (`#[derive(Accounts)]`):** Sim
+- **Status CWE-862 (Autoridade / Signer):** Pass (Restrições de autoridade/signer identificadas no Anchor)
+- **Status CWE-190 (Aritmética Segura):** Warning / Review Required (Operações aritméticas sem checked_* detetadas)
+- **Observações / Achados:**
+  - CWE-190: Operações aritméticas nativas sem métodos checked_* ou saturating_*.
 
-### 33. [MEDIUM] CWE-190: Integer Overflow / Underflow Risk
-- **Ficheiro:** `src/services/repository/charge_repository.rs`
-- **Descrição:** Uso de operações aritméticas diretas sem métodos checked_* ou saturating_* em src/services/repository/charge_repository.rs.
-- **Remediação Recomendada:** Substituir operações aritméticas nativas por .checked_add(), .checked_sub(), ou garantir ativação de overflow-checks no Cargo.toml.
+### 33. `src/adapters/database/mod.rs`
+- **Contém Structs Anchor (`#[derive(Accounts)]`):** Não
+- **Status CWE-862 (Autoridade / Signer):** Pass (Validado / Sem structs Anchor críticas)
+- **Status CWE-190 (Aritmética Segura):** Pass (Sem operações aritméticas críticas ou uso de checked)
 
-### 34. [MEDIUM] CWE-190: Integer Overflow / Underflow Risk
-- **Ficheiro:** `src/services/repository/payment_repository.rs`
-- **Descrição:** Uso de operações aritméticas diretas sem métodos checked_* ou saturating_* em src/services/repository/payment_repository.rs.
-- **Remediação Recomendada:** Substituir operações aritméticas nativas por .checked_add(), .checked_sub(), ou garantir ativação de overflow-checks no Cargo.toml.
+### 34. `src/adapters/external/mod.rs`
+- **Contém Structs Anchor (`#[derive(Accounts)]`):** Não
+- **Status CWE-862 (Autoridade / Signer):** Pass (Validado / Sem structs Anchor críticas)
+- **Status CWE-190 (Aritmética Segura):** Pass (Sem operações aritméticas críticas ou uso de checked)
 
-### 35. [MEDIUM] CWE-190: Integer Overflow / Underflow Risk
-- **Ficheiro:** `src/utils/stellar.rs`
-- **Descrição:** Uso de operações aritméticas diretas sem métodos checked_* ou saturating_* em src/utils/stellar.rs.
-- **Remediação Recomendada:** Substituir operações aritméticas nativas por .checked_add(), .checked_sub(), ou garantir ativação de overflow-checks no Cargo.toml.
+### 35. `src/adapters/mod.rs`
+- **Contém Structs Anchor (`#[derive(Accounts)]`):** Não
+- **Status CWE-862 (Autoridade / Signer):** Pass (Validado / Sem structs Anchor críticas)
+- **Status CWE-190 (Aritmética Segura):** Pass (Sem operações aritméticas críticas ou uso de checked)
 
-### 36. [MEDIUM] CWE-190: Integer Overflow / Underflow Risk
-- **Ficheiro:** `src/webhook.rs`
-- **Descrição:** Uso de operações aritméticas diretas sem métodos checked_* ou saturating_* em src/webhook.rs.
-- **Remediação Recomendada:** Substituir operações aritméticas nativas por .checked_add(), .checked_sub(), ou garantir ativação de overflow-checks no Cargo.toml.
+### 36. `src/adapters/stellar/mod.rs`
+- **Contém Structs Anchor (`#[derive(Accounts)]`):** Não
+- **Status CWE-862 (Autoridade / Signer):** Pass (Validado / Sem structs Anchor críticas)
+- **Status CWE-190 (Aritmética Segura):** Pass (Sem operações aritméticas críticas ou uso de checked)
 
-### 37. [MEDIUM] CWE-190: Integer Overflow / Underflow Risk
-- **Ficheiro:** `tests/integration.rs`
-- **Descrição:** Uso de operações aritméticas diretas sem métodos checked_* ou saturating_* em tests/integration.rs.
-- **Remediação Recomendada:** Substituir operações aritméticas nativas por .checked_add(), .checked_sub(), ou garantir ativação de overflow-checks no Cargo.toml.
+### 37. `src/config/mod.rs`
+- **Contém Structs Anchor (`#[derive(Accounts)]`):** Não
+- **Status CWE-862 (Autoridade / Signer):** Pass (Validado / Sem structs Anchor críticas)
+- **Status CWE-190 (Aritmética Segura):** Pass (Sem operações aritméticas críticas ou uso de checked)
+
+### 38. `src/domain/invoice/mod.rs`
+- **Contém Structs Anchor (`#[derive(Accounts)]`):** Não
+- **Status CWE-862 (Autoridade / Signer):** Pass (Validado / Sem structs Anchor críticas)
+- **Status CWE-190 (Aritmética Segura):** Pass (Sem operações aritméticas críticas ou uso de checked)
+
+### 39. `src/domain/merchant/mod.rs`
+- **Contém Structs Anchor (`#[derive(Accounts)]`):** Não
+- **Status CWE-862 (Autoridade / Signer):** Pass (Validado / Sem structs Anchor críticas)
+- **Status CWE-190 (Aritmética Segura):** Pass (Sem operações aritméticas críticas ou uso de checked)
+
+### 40. `src/domain/payment/mod.rs`
+- **Contém Structs Anchor (`#[derive(Accounts)]`):** Não
+- **Status CWE-862 (Autoridade / Signer):** Pass (Validado / Sem structs Anchor críticas)
+- **Status CWE-190 (Aritmética Segura):** Pass (Sem operações aritméticas críticas ou uso de checked)
+
+### 41. `src/domain/settlement/mod.rs`
+- **Contém Structs Anchor (`#[derive(Accounts)]`):** Não
+- **Status CWE-862 (Autoridade / Signer):** Pass (Validado / Sem structs Anchor críticas)
+- **Status CWE-190 (Aritmética Segura):** Pass (Sem operações aritméticas críticas ou uso de checked)
+
+### 42. `src/dto/mod.rs`
+- **Contém Structs Anchor (`#[derive(Accounts)]`):** Não
+- **Status CWE-862 (Autoridade / Signer):** Pass (Validado / Sem structs Anchor críticas)
+- **Status CWE-190 (Aritmética Segura):** Pass (Sem operações aritméticas críticas ou uso de checked)
+
+### 43. `src/errors/mod.rs`
+- **Contém Structs Anchor (`#[derive(Accounts)]`):** Não
+- **Status CWE-862 (Autoridade / Signer):** Pass (Validado / Sem structs Anchor críticas)
+- **Status CWE-190 (Aritmética Segura):** Pass (Sem operações aritméticas críticas ou uso de checked)
+
+### 44. `src/interfaces/api/mod.rs`
+- **Contém Structs Anchor (`#[derive(Accounts)]`):** Não
+- **Status CWE-862 (Autoridade / Signer):** Pass (Validado / Sem structs Anchor críticas)
+- **Status CWE-190 (Aritmética Segura):** Pass (Sem operações aritméticas críticas ou uso de checked)
+
+### 45. `src/interfaces/mod.rs`
+- **Contém Structs Anchor (`#[derive(Accounts)]`):** Não
+- **Status CWE-862 (Autoridade / Signer):** Pass (Validado / Sem structs Anchor críticas)
+- **Status CWE-190 (Aritmética Segura):** Pass (Sem operações aritméticas críticas ou uso de checked)
+
+### 46. `src/interfaces/webhook/mod.rs`
+- **Contém Structs Anchor (`#[derive(Accounts)]`):** Não
+- **Status CWE-862 (Autoridade / Signer):** Pass (Validado / Sem structs Anchor críticas)
+- **Status CWE-190 (Aritmética Segura):** Pass (Sem operações aritméticas críticas ou uso de checked)
+
+### 47. `src/lib.rs`
+- **Contém Structs Anchor (`#[derive(Accounts)]`):** Não
+- **Status CWE-862 (Autoridade / Signer):** Pass (Validado / Sem structs Anchor críticas)
+- **Status CWE-190 (Aritmética Segura):** Warning / Review Required (Operações aritméticas sem checked_* detetadas)
+- **Observações / Achados:**
+  - CWE-190: Operações aritméticas nativas sem métodos checked_* ou saturating_*.
+
+### 48. `src/main.rs`
+- **Contém Structs Anchor (`#[derive(Accounts)]`):** Não
+- **Status CWE-862 (Autoridade / Signer):** Pass (Validado / Sem structs Anchor críticas)
+- **Status CWE-190 (Aritmética Segura):** Warning / Review Required (Operações aritméticas sem checked_* detetadas)
+- **Observações / Achados:**
+  - CWE-190: Operações aritméticas nativas sem métodos checked_* ou saturating_*.
+
+### 49. `src/models.rs`
+- **Contém Structs Anchor (`#[derive(Accounts)]`):** Não
+- **Status CWE-862 (Autoridade / Signer):** Pass (Validado / Sem structs Anchor críticas)
+- **Status CWE-190 (Aritmética Segura):** Pass (Sem operações aritméticas críticas ou uso de checked)
+
+### 50. `src/observability/mod.rs`
+- **Contém Structs Anchor (`#[derive(Accounts)]`):** Não
+- **Status CWE-862 (Autoridade / Signer):** Pass (Validado / Sem structs Anchor críticas)
+- **Status CWE-190 (Aritmética Segura):** Pass (Sem operações aritméticas críticas ou uso de checked)
+
+### 51. `src/repositories/mod.rs`
+- **Contém Structs Anchor (`#[derive(Accounts)]`):** Não
+- **Status CWE-862 (Autoridade / Signer):** Pass (Validado / Sem structs Anchor críticas)
+- **Status CWE-190 (Aritmética Segura):** Pass (Sem operações aritméticas críticas ou uso de checked)
+
+### 52. `src/routes/orders.rs`
+- **Contém Structs Anchor (`#[derive(Accounts)]`):** Não
+- **Status CWE-862 (Autoridade / Signer):** Pass (Validado / Sem structs Anchor críticas)
+- **Status CWE-190 (Aritmética Segura):** Warning / Review Required (Operações aritméticas sem checked_* detetadas)
+- **Observações / Achados:**
+  - CWE-190: Operações aritméticas nativas sem métodos checked_* ou saturating_*.
+
+### 53. `src/routes.rs`
+- **Contém Structs Anchor (`#[derive(Accounts)]`):** Não
+- **Status CWE-862 (Autoridade / Signer):** Pass (Validado / Sem structs Anchor críticas)
+- **Status CWE-190 (Aritmética Segura):** Warning / Review Required (Operações aritméticas sem checked_* detetadas)
+- **Observações / Achados:**
+  - CWE-190: Operações aritméticas nativas sem métodos checked_* ou saturating_*.
+
+### 54. `src/services/api.rs`
+- **Contém Structs Anchor (`#[derive(Accounts)]`):** Não
+- **Status CWE-862 (Autoridade / Signer):** Pass (Validado / Sem structs Anchor críticas)
+- **Status CWE-190 (Aritmética Segura):** Warning / Review Required (Operações aritméticas sem checked_* detetadas)
+- **Observações / Achados:**
+  - CWE-190: Operações aritméticas nativas sem métodos checked_* ou saturating_*.
+
+### 55. `src/services/db.rs`
+- **Contém Structs Anchor (`#[derive(Accounts)]`):** Não
+- **Status CWE-862 (Autoridade / Signer):** Pass (Validado / Sem structs Anchor críticas)
+- **Status CWE-190 (Aritmética Segura):** Warning / Review Required (Operações aritméticas sem checked_* detetadas)
+- **Observações / Achados:**
+  - CWE-190: Operações aritméticas nativas sem métodos checked_* ou saturating_*.
+
+### 56. `src/services/ingestion/mod.rs`
+- **Contém Structs Anchor (`#[derive(Accounts)]`):** Não
+- **Status CWE-862 (Autoridade / Signer):** Pass (Validado / Sem structs Anchor críticas)
+- **Status CWE-190 (Aritmética Segura):** Pass (Sem operações aritméticas críticas ou uso de checked)
+
+### 57. `src/services/listener.rs`
+- **Contém Structs Anchor (`#[derive(Accounts)]`):** Não
+- **Status CWE-862 (Autoridade / Signer):** Pass (Validado / Sem structs Anchor críticas)
+- **Status CWE-190 (Aritmética Segura):** Pass (Sem operações aritméticas críticas ou uso de checked)
+
+### 58. `src/services/mod.rs`
+- **Contém Structs Anchor (`#[derive(Accounts)]`):** Não
+- **Status CWE-862 (Autoridade / Signer):** Pass (Validado / Sem structs Anchor críticas)
+- **Status CWE-190 (Aritmética Segura):** Pass (Sem operações aritméticas críticas ou uso de checked)
+
+### 59. `src/services/orchestration/mod.rs`
+- **Contém Structs Anchor (`#[derive(Accounts)]`):** Não
+- **Status CWE-862 (Autoridade / Signer):** Pass (Validado / Sem structs Anchor críticas)
+- **Status CWE-190 (Aritmética Segura):** Pass (Sem operações aritméticas críticas ou uso de checked)
+
+### 60. `src/services/reconciler.rs`
+- **Contém Structs Anchor (`#[derive(Accounts)]`):** Não
+- **Status CWE-862 (Autoridade / Signer):** Pass (Validado / Sem structs Anchor críticas)
+- **Status CWE-190 (Aritmética Segura):** Pass (Sem operações aritméticas críticas ou uso de checked)
+
+### 61. `src/services/reconciliation/mod.rs`
+- **Contém Structs Anchor (`#[derive(Accounts)]`):** Não
+- **Status CWE-862 (Autoridade / Signer):** Pass (Validado / Sem structs Anchor críticas)
+- **Status CWE-190 (Aritmética Segura):** Pass (Sem operações aritméticas críticas ou uso de checked)
+
+### 62. `src/services/repository/charge_repository.rs`
+- **Contém Structs Anchor (`#[derive(Accounts)]`):** Não
+- **Status CWE-862 (Autoridade / Signer):** Pass (Validado / Sem structs Anchor críticas)
+- **Status CWE-190 (Aritmética Segura):** Warning / Review Required (Operações aritméticas sem checked_* detetadas)
+- **Observações / Achados:**
+  - CWE-190: Operações aritméticas nativas sem métodos checked_* ou saturating_*.
+
+### 63. `src/services/repository/mod.rs`
+- **Contém Structs Anchor (`#[derive(Accounts)]`):** Não
+- **Status CWE-862 (Autoridade / Signer):** Pass (Validado / Sem structs Anchor críticas)
+- **Status CWE-190 (Aritmética Segura):** Pass (Sem operações aritméticas críticas ou uso de checked)
+
+### 64. `src/services/repository/payment_repository.rs`
+- **Contém Structs Anchor (`#[derive(Accounts)]`):** Não
+- **Status CWE-862 (Autoridade / Signer):** Pass (Validado / Sem structs Anchor críticas)
+- **Status CWE-190 (Aritmética Segura):** Warning / Review Required (Operações aritméticas sem checked_* detetadas)
+- **Observações / Achados:**
+  - CWE-190: Operações aritméticas nativas sem métodos checked_* ou saturating_*.
+
+### 65. `src/services/security/mod.rs`
+- **Contém Structs Anchor (`#[derive(Accounts)]`):** Não
+- **Status CWE-862 (Autoridade / Signer):** Pass (Validado / Sem structs Anchor críticas)
+- **Status CWE-190 (Aritmética Segura):** Pass (Sem operações aritméticas críticas ou uso de checked)
+
+### 66. `src/utils/mod.rs`
+- **Contém Structs Anchor (`#[derive(Accounts)]`):** Não
+- **Status CWE-862 (Autoridade / Signer):** Pass (Validado / Sem structs Anchor críticas)
+- **Status CWE-190 (Aritmética Segura):** Pass (Sem operações aritméticas críticas ou uso de checked)
+
+### 67. `src/utils/stellar.rs`
+- **Contém Structs Anchor (`#[derive(Accounts)]`):** Não
+- **Status CWE-862 (Autoridade / Signer):** Pass (Validado / Sem structs Anchor críticas)
+- **Status CWE-190 (Aritmética Segura):** Warning / Review Required (Operações aritméticas sem checked_* detetadas)
+- **Observações / Achados:**
+  - CWE-190: Operações aritméticas nativas sem métodos checked_* ou saturating_*.
+
+### 68. `src/webhook.rs`
+- **Contém Structs Anchor (`#[derive(Accounts)]`):** Não
+- **Status CWE-862 (Autoridade / Signer):** Pass (Validado / Sem structs Anchor críticas)
+- **Status CWE-190 (Aritmética Segura):** Warning / Review Required (Operações aritméticas sem checked_* detetadas)
+- **Observações / Achados:**
+  - CWE-190: Operações aritméticas nativas sem métodos checked_* ou saturating_*.
+
+### 69. `tests/integration.rs`
+- **Contém Structs Anchor (`#[derive(Accounts)]`):** Não
+- **Status CWE-862 (Autoridade / Signer):** Pass (Validado / Sem structs Anchor críticas)
+- **Status CWE-190 (Aritmética Segura):** Warning / Review Required (Operações aritméticas sem checked_* detetadas)
+- **Observações / Achados:**
+  - CWE-190: Operações aritméticas nativas sem métodos checked_* ou saturating_*.
 
