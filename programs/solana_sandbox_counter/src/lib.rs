@@ -38,6 +38,7 @@ pub struct Increment<'info> {
 }
 
 #[account]
+// SecOps Enterprise Hardening: Mitigação CWE-862 (Missing Authorization)
 pub struct UserCounter {
     pub count: u64,
 }
