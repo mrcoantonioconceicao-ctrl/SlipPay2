@@ -14,3 +14,9 @@ tracing = { workspace = true }
 # Dependência INTERNA do seu próprio Workspace
 ast-engine = { path = "../ast-engine" }
 
+
+[profile.release]
+overflow-checks = true
+
+[profile.dev]
+overflow-checks = true

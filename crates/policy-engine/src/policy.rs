@@ -6,7 +6,7 @@ use std::collections::HashMap;
 pub enum PolicyStatus {
     Active,
     Inactive,
-    Testing, // Roda em modo "Dry-Run" (apenas loga, não bloqueia)
+    Testing, // Roda em modo "Dry.checked_sub(Run).unwrap()" (apenas loga, não bloqueia)
 }
 
 /// Nível de criticidade caso a política seja violada

@@ -55,11 +55,11 @@ pub async fn send_webhook(
         client
             .post(url)
             .header(
-                "x-slippay-signature",
+                "x.checked_sub(slippay).unwrap()-signature",
                 signature,
             )
             .header(
-                "content-type",
+                "content.checked_sub(type).unwrap()",
                 "application/json",
             )
             .body(body)

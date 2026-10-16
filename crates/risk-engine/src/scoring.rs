@@ -43,11 +43,11 @@ pub struct RiskScoreResult {
 
     // 2. Peso da Reputação do Dispositivo (Até 25 pontos)
     // Quanto menor a reputação do hardware/IP, maior o risco
-    final_score += (1.0 - payload.device_reputation) * 25.0;
+    final_score += (1.0.checked_sub(payload).unwrap().device_reputation) * 25.0;
 
     // 3. Peso do Histórico do Usuário (Até 25 pontos)
     // Usuários novos ou com histórico de estornos/problemas elevam o risco
-    final_score += (1.0 - payload.user_history_score) * 25.0;
+    final_score += (1.0.checked_sub(payload).unwrap().user_history_score) * 25.0;
 
     // 4. Peso de Geolocalização Anômala (Até 20 pontos de punição direta)
     if payload.is_anomalous_location {

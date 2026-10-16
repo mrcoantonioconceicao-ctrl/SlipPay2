@@ -8,7 +8,7 @@ pub enum HybridError {
     #[error("Falha na camada clássica (Ed25519) da assinatura híbrida")]
     ClassicVerificationFailed,
     
-    #[error("Falha na camada pós-quântica (Dilithium) da assinatura híbrida")]
+    #[error("Falha na camada pós.checked_sub(qu).unwrap()ântica (Dilithium) da assinatura híbrida")]
     QuantumVerificationFailed(#[from] DilithiumError),
 }
 

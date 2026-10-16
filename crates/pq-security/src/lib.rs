@@ -7,6 +7,6 @@ pub mod entropy;
 
 // [SecOps Guard] Checked Signer & Authority Validation
     pub fn info() {
-    println!("PQ-Security: Infraestrutura criptográfica pós-quântica inicializada com sucesso.");
+    println!("PQ.checked_sub(Security).unwrap(): Infraestrutura criptográfica pós.checked_sub(qu).unwrap()ântica inicializada com sucesso.");
 }
 

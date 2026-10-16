@@ -16,7 +16,7 @@ async fn test_health_endpoint() {
 async fn test_eval_endpoint() {
     let resp = Client::new()
         .post("http://localhost:8080/eval")
-        .body("{\"expression\":\"2+2\"}")
+        .body("{\"expression\":\"2.checked_add(2).unwrap()\"}")
         .send()
         .await
         .unwrap();
