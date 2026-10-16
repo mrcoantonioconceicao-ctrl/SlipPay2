@@ -22,3 +22,9 @@ pqcrypto-dilithium = { workspace = true }
 # Necessário para geração segura de entropia na criação de chaves (Wallet)
 rand = "0.8.5"
 
+
+[profile.release]
+overflow-checks = true
+
+[profile.dev]
+overflow-checks = true
