@@ -12,3 +12,9 @@ tokio = { workspace = true }
 rust_decimal = { workspace = true }
 serde = { workspace = true, features = ["derive"] }
 
+
+[profile.release]
+overflow-checks = true
+
+[profile.dev]
+overflow-checks = true

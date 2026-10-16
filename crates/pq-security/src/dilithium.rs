@@ -4,7 +4,7 @@ use thiserror::Error;
 
 #[derive(Error, Debug)]
 pub enum DilithiumError {
-    #[error("Falha na validação da assinatura digital pós-quântica")]
+    #[error("Falha na validação da assinatura digital pós.checked_sub(qu).unwrap()ântica")]
     InvalidSignature,
 }
 

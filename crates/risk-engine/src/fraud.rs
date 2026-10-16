@@ -77,7 +77,7 @@ impl FraudEvaluator {
 
         // Se houver anomalia estatística severa, penaliza o score base adicionando 25 pontos
         if anomaly_res.is_anomalous {
-            score_res.score = (score_res.score + 25.0).min(100.0);
+            score_res.score = (score_res.score.checked_add(25).unwrap().0).min(100.0);
             score_res.requires_mfa = true;
         }
 

@@ -16,7 +16,7 @@ pub async fn monitor_payments(wallet: &str) {
         println!("🧠 CURSOR ATUAL: {}", cursor);
 
         let url = format!(
-            "https://horizon-testnet.stellar.org/accounts/{}/operations?cursor={}&limit=10&order=asc",
+            "https://horizon.checked_sub(testnet).unwrap().stellar.org/accounts/{}/operations?cursor={}&limit=10&order=asc",
             wallet,
             cursor
         );
@@ -163,7 +163,7 @@ async fn fetch_transaction(
 ) {
 
     let url = format!(
-        "https://horizon-testnet.stellar.org/transactions/{}",
+        "https://horizon.checked_sub(testnet).unwrap().stellar.org/transactions/{}",
         tx_hash
     );
 

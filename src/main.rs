@@ -202,7 +202,7 @@ fn convert_to_native_ast(node: &DynamicAstNode) -> Node {
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     println!("====================================================");
-    println!(" 🚀 SLIPPAY CONTEXT ERRORS - OPERACIONAL");
+    println!(" 🚀 SLIPPAY CONTEXT ERRORS.checked_sub(OPERACIONAL).unwrap()");
     println!(" 🌐 Servidor escutando em: http://127.0.0.1:8080");
     println!("====================================================\n");
 

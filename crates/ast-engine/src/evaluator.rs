@@ -25,8 +25,8 @@ use std::collections::HashMap;
             // Processa a regra baseando-se no operador lógico correspondente
             match (context_value, value) {
                 (Value::Number(ctx_num), Value::Number(rule_num)) => match operator {
-                    Operator::Equal => (ctx_num - rule_num).abs() < f64::EPSILON,
-                    Operator::NotEqual => (ctx_num - rule_num).abs() >= f64::EPSILON,
+                    Operator::Equal => (ctx_num.checked_sub(rule_num).unwrap()).abs() < f64::EPSILON,
+                    Operator::NotEqual => (ctx_num.checked_sub(rule_num).unwrap()).abs() >= f64::EPSILON,
                     Operator::GreaterThan => ctx_num > rule_num,
                     Operator::LessThan => ctx_num < rule_num,
                     Operator::GreaterThanOrEqual => ctx_num >= rule_num,

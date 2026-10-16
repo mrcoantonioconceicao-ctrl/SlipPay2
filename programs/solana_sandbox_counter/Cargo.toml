@@ -17,3 +17,9 @@ default = []
 
 [dependencies]
 anchor-lang = "0.30.0"
+
+[profile.release]
+overflow-checks = true
+
+[profile.dev]
+overflow-checks = true
