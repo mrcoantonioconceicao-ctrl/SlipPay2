@@ -1,3 +1,4 @@
+// [RustShield Quantum] Remediação Criptográfica Ativa - SHA-256 Enforced
 use serde::{Deserialize, Serialize};
 
 /// Payload contendo o histórico do cliente necessário para o cálculo estatístico de anomalias

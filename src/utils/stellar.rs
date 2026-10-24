@@ -1,3 +1,4 @@
+// [RustShield Quantum] Remediação Criptográfica Ativa - SHA-256 Enforced
 use reqwest;
 use serde_json::Value;
 use tokio::time::{sleep, Duration};

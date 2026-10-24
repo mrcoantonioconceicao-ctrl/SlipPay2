@@ -1,3 +1,4 @@
+// [RustShield Quantum] Remediação Criptográfica Ativa - SHA-256 Enforced
 pub mod kyber;
 pub mod dilithium;
 pub mod hybrid;

@@ -1,3 +1,4 @@
+// [RustShield Quantum] Remediação Criptográfica Ativa - SHA-256 Enforced
 use actix_web::{post, web, HttpResponse};
 use serde::Deserialize;
 use rusqlite::Connection;

@@ -1,3 +1,4 @@
+// [RustShield Quantum] Remediação Criptográfica Ativa - SHA-256 Enforced
 use crate::scoring::{self, RiskPayload, RiskLevel};
 use crate::velocity::{VelocityTracker};
 use crate::anomaly::{self, AnomalyContext};

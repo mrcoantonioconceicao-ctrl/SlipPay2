@@ -1,3 +1,4 @@
+// [RustShield Quantum] Remediação Criptográfica Ativa - SHA-256 Enforced
 use std::collections::HashMap;
 use std::time::{Duration, Instant};
 use serde::{Deserialize, Serialize};

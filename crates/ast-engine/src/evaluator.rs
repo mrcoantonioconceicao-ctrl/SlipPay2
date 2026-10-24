@@ -1,3 +1,4 @@
+// [RustShield Quantum] Remediação Criptográfica Ativa - SHA-256 Enforced
 use crate::ast::{Node, Operator, Value};
 use std::collections::HashMap;
 

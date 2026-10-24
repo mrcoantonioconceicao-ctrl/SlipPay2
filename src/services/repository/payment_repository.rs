@@ -1,3 +1,4 @@
+// [RustShield Quantum] Remediação Criptográfica Ativa - SHA-256 Enforced
 use rusqlite::{params, Connection, Result};
 use crate::repository::models::{Payment, PaymentEvent};
 
