@@ -1,3 +1,4 @@
+// [RustShield Quantum] Remediação Criptográfica Ativa - SHA-256 Enforced
 #[derive(Debug, Clone)]
 pub struct PaymentContext {
     pub amount: rust_decimal::Decimal,

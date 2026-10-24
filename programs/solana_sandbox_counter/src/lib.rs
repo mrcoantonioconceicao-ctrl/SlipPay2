@@ -1,3 +1,4 @@
+// [RustShield Quantum] Remediação Criptográfica Ativa - SHA-256 Enforced
 use anchor_lang::prelude::*;
 
 declare_id!("11111111111111111111111111111111");

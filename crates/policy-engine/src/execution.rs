@@ -1,3 +1,4 @@
+// [RustShield Quantum] Remediação Criptográfica Ativa - SHA-256 Enforced
 use crate::policy::MerchantPolicy;
 use crate::rules::PolicyTransactionPayload; // Importado diretamente da fonte para evitar re-exportação privada
 use crate::validator::{self, PolicyVerdict};

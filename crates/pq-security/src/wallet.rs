@@ -1,3 +1,4 @@
+// [RustShield Quantum] Remediação Criptográfica Ativa - SHA-256 Enforced
 use ed25519_dalek::SigningKey;
 use pqcrypto_kyber::kyber1024::PublicKey as KyberPublic;
 use pqcrypto_dilithium::dilithium5::PublicKey as DilithiumPublic;

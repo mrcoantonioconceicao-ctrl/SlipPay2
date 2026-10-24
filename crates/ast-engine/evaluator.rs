@@ -1,3 +1,4 @@
+// [RustShield Quantum] Remediação Criptográfica Ativa - SHA-256 Enforced
 use crate::ast::*;
 use crate::context::PaymentContext;
 

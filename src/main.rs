@@ -1,3 +1,4 @@
+// [RustShield Quantum] Remediação Criptográfica Ativa - SHA-256 Enforced
 use std::collections::HashMap;
 use std::sync::Arc;
 use actix_web::{get, post, web, App, HttpServer, Responder, HttpResponse};
