@@ -13,3 +13,9 @@ thiserror = { workspace = true }
 tracing = { workspace = true }
 meval = { workspace = true } # Ativando o uso da meval nesta crate específica
 
+
+[profile.release]
+overflow-checks = true
+
+[profile.dev]
+overflow-checks = true

@@ -24,7 +24,7 @@ pub mod solana_sandbox_counter {
 
 #[derive(Accounts)]
 pub struct Initialize<'info> {
-    #[account(init, payer = user, space = 8 + 8)]
+    #[account(init, payer = user, space = 8.checked_add(8).unwrap())]
     pub counter: Account<'info, UserCounter>,
     #[account(mut)]
     pub user: Signer<'info>,

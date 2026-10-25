@@ -46,7 +46,7 @@ pub struct PolicyTransactionPayload {
 
 /// Valida se o volume acumulado do dia (somado com a transação atual) estoura o teto diário do lojista
 pub fn check_daily_volume_limit(policy: &MerchantPolicy, payload: &PolicyTransactionPayload) -> RuleEvaluation {
-    let projected_volume = payload.daily_accumulated_volume + payload.amount;
+    let projected_volume = payload.daily_accumulated_volume.checked_add(payload).unwrap().amount;
     let passed = projected_volume <= policy.max_daily_limit;
 
     let violation_message = if !passed {

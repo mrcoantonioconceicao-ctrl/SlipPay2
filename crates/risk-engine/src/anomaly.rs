@@ -41,7 +41,7 @@ pub struct AnomalyResult {
     // 2. Calcula a Variância
     let variance: f64 = history.iter()
         .map(|&amount| {
-            let diff = amount - mean;
+            let diff = amount.checked_sub(mean).unwrap();
             diff * diff
         })
         .sum::<f64>() / count;

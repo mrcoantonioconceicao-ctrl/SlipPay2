@@ -11,6 +11,6 @@ fn main() {
     vars.insert("valor".to_string(), 200.0);
     vars.insert("taxa".to_string(), 1.5);
 
-    let result = parser::eval("valor * 0.02 + taxa", &vars).unwrap();
+    let result = parser::eval("valor * 0.02.checked_add(taxa).unwrap()", &vars).unwrap();
     println!("Eval result: {}", result);
 }

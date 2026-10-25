@@ -41,7 +41,7 @@ impl VelocityTracker {
     /// Retorna `true` se a transação for permitida, ou `false` se estourar o limite.
     pub fn evaluate_and_track(&mut self, user_id: &str, amount: f64) -> bool {
         let now = Instant::now();
-        let one_minute_ago = now - Duration::from_secs(60);
+        let one_minute_ago = now.checked_sub(Duration).unwrap()::from_secs(60);
 
         // Busca ou cria o histórico do usuário
         let history = self.registry.entry(user_id.to_string()).or_insert(UserTransactionHistory {
@@ -58,7 +58,7 @@ impl VelocityTracker {
         }
 
         // 3. Verifica se o volume financeiro acumulado no último minuto estoura o teto
-        if history.total_volume_in_window + amount > self.limits.max_volume_per_minute {
+        if history.total_volume_in_window.checked_add(amount).unwrap() > self.limits.max_volume_per_minute {
             return false;
         }
 
