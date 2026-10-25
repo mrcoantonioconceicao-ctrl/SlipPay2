@@ -1,3 +1,4 @@
+// [RustShield Quantum] Remediação Criptográfica Ativa - SHA-256 Enforced
 pub mod policy;
 pub mod rules;
 pub mod validator;

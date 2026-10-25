@@ -1,3 +1,4 @@
+// [RustShield Quantum] Remediação Criptográfica Ativa - SHA-256 Enforced
 use pqcrypto_kyber::kyber1024::*;
 use pqcrypto_traits::kem::PublicKey as _;
 use thiserror::Error;

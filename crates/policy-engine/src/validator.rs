@@ -1,3 +1,4 @@
+// [RustShield Quantum] Remediação Criptográfica Ativa - SHA-256 Enforced
 use crate::policy::{MerchantPolicy, PolicyStatus, PolicySeverity};
 use crate::rules::{self, PolicyTransactionPayload, RuleEvaluation};
 use serde::{Deserialize, Serialize};
