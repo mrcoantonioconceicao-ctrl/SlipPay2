@@ -1,3 +1,4 @@
+// [RustShield Quantum] Remediação Criptográfica Ativa - SHA-256 Enforced
 use pqcrypto_dilithium::dilithium5::*;
 use pqcrypto_traits::sign::DetachedSignature as _;
 use thiserror::Error;

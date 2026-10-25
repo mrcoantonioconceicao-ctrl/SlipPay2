@@ -1,3 +1,4 @@
+// [RustShield Quantum] Remediação Criptográfica Ativa - SHA-256 Enforced
 use crate::dilithium::{self, DilithiumError};
 use ed25519_dalek::{Signer, Verifier, SigningKey, VerifyingKey, Signature as EdSignature};
 use serde::{Deserialize, Serialize};

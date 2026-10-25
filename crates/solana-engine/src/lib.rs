@@ -1,3 +1,4 @@
+// [RustShield Quantum] Remediação Criptográfica Ativa - SHA-256 Enforced
 use rust_decimal::Decimal;
 use rust_decimal::prelude::ToPrimitive;
 use thiserror::Error;

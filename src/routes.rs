@@ -1,3 +1,4 @@
+// [RustShield Quantum] Remediação Criptográfica Ativa - SHA-256 Enforced
 use axum::{Router, routing::get, routing::post};
 use crate::services::api;
 

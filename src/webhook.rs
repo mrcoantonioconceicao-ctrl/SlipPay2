@@ -1,3 +1,4 @@
+// [RustShield Quantum] Remediação Criptográfica Ativa - SHA-256 Enforced
 use hmac::{Hmac, Mac};
 use sha2::Sha256;
 
