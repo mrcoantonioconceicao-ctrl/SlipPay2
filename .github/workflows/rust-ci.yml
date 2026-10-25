@@ -20,6 +20,14 @@ jobs:
         toolchain: stable
         override: true
 
+<<<<<<< HEAD
+    - name: Compilar Workspace Rust
+      run: cargo build --workspace --verbose || cargo build --verbose
+
+    - name: Rodar Testes
+      run: cargo test --workspace --verbose || cargo test --verbose
+=======
     - name: Validação Estática do Projeto (Pre-flight CI)
       run: |
         cargo check --verbose || echo "Aviso: Validação concluída com avisos controlados."
+>>>>>>> origin/main

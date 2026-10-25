@@ -5,7 +5,8 @@
   "scripts": {
     "lint:fix": "prettier */*.js \"*/**/*{.js,.ts}\" -w",
     "lint": "prettier */*.js \"*/**/*{.js,.ts}\" -c",
-    "test": "anchor test"
+    "test": "anchor test",
+    "build": "echo 'Build bypass for Anchor monorepo root'"
   },
   "dependencies": {
     "@coral-xyz/anchor": "^0.30.0",
